@@ -1,0 +1,32 @@
+import DraggableXYCard from './DraggableXYCard';
+import type { CanvasItem } from '../../store/templateStore';
+
+export interface XYCanvasProps {
+  items: CanvasItem[];
+  readOnly: boolean;
+  onRemove?: (id: string) => void;
+  onSettings?: (item: CanvasItem) => void;
+  onExpandH?: (id: string) => void;
+  onExpandV?: (id: string) => void;
+}
+
+export default function XYCanvas({
+  items, readOnly, onRemove, onSettings, onExpandH, onExpandV,
+}: XYCanvasProps) {
+  return (
+    <div className="xy-overlay">
+      {items.map((item) => (
+        <DraggableXYCard
+          key={item.id}
+          item={item}
+          readOnly={readOnly}
+          allItems={items}
+          onRemove={onRemove}
+          onSettings={onSettings}
+          onExpandH={onExpandH}
+          onExpandV={onExpandV}
+        />
+      ))}
+    </div>
+  );
+}

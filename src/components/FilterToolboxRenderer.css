@@ -1,0 +1,192 @@
+/* ── Filter Toolbox Renderer (canvas card body) ──────────────────────────── */
+
+.ftr-root {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px 8px;
+  height: 100%;
+  overflow: auto;
+}
+
+/* ── Header ── */
+.ftr-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.ftr-header-icon {
+  font-size: 12px;
+  color: var(--color-primary);
+}
+
+.ftr-header-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-muted);
+}
+
+.ftr-active-tag {
+  font-size: 10px !important;
+  line-height: 16px !important;
+  padding: 0 5px !important;
+  margin: 0 !important;
+}
+
+/* ── Config summary (when no filters array yet) ── */
+.ftr-config-summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
+  border: 1px dashed var(--color-border);
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+
+.ftr-config-summary__icon {
+  font-size: 11px;
+  color: var(--color-primary);
+  opacity: 0.6;
+  flex-shrink: 0;
+}
+
+.ftr-config-summary__text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Filter entries ── */
+.ftr-entries {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ftr-entry {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: var(--color-bg);
+}
+
+.ftr-entry__chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+}
+
+.ftr-chip-label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.ftr-chip-type {
+  font-size: 9px !important;
+  line-height: 14px !important;
+  padding: 0 4px !important;
+  margin: 0 !important;
+}
+
+.ftr-chip-scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+  font-size: 10px;
+  margin-left: auto;
+  color: var(--color-text-muted);
+}
+
+.ftr-chip-scope-count {
+  font-size: 9px;
+  font-weight: 600;
+}
+
+/* ── Connected charts ── */
+.ftr-connections {
+  display: flex;
+  align-items: flex-start;
+  gap: 5px;
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.ftr-connections__icon {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  opacity: 0.6;
+  margin-top: 2px;
+  flex-shrink: 0;
+}
+
+.ftr-connections__none {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  opacity: 0.5;
+  font-style: italic;
+}
+
+.ftr-connections__global {
+  font-size: 10px;
+  color: var(--color-primary);
+  font-weight: 500;
+  cursor: default;
+}
+
+.ftr-connections__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+
+.ftr-connections__tag {
+  display: inline-block;
+  font-size: 9px;
+  font-weight: 500;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: var(--color-primary);
+  color: #fff;
+  opacity: 0.8;
+  white-space: nowrap;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: default;
+  transition: opacity 0.15s;
+}
+
+.ftr-connections__tag:hover {
+  opacity: 1;
+}
+
+/* ── Empty ── */
+.ftr-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 100%;
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+
+.ftr-empty-icon {
+  font-size: 20px;
+  opacity: 0.4;
+}

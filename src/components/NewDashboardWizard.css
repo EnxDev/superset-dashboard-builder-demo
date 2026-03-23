@@ -1,0 +1,246 @@
+.wiz-modal .ant-modal-body {
+  padding-top: 8px;
+}
+
+.wiz-steps {
+  margin-bottom: 24px;
+}
+
+.wiz-body {
+  min-height: 300px;
+}
+
+.wiz-subtitle {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0 0 16px;
+}
+
+/* ── Mode picker grid ── */
+.wiz-mode-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.wiz-mode-preview {
+  width: 100%;
+  height: 90px;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+}
+
+.wiz-mode-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 3px;
+}
+
+.wiz-mode-desc {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+
+.wiz-tpl-mode {
+  font-size: 10px;
+  color: var(--color-primary);
+  margin-top: 2px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* ── Step 0: start options ── */
+.wiz-start-options {
+  display: flex;
+  gap: 16px;
+}
+
+.wiz-start-card {
+  flex: 1;
+  padding: 24px 20px;
+  text-align: center;
+}
+
+.wiz-start-card:hover:not(.selectable-card--disabled) {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.wiz-start-icon {
+  color: var(--color-primary);
+  margin-bottom: 12px;
+}
+
+.wiz-start-label {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 6px;
+}
+
+.wiz-start-desc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+/* ── Template list ── */
+.wiz-tpl-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.wiz-tpl-card {
+  width: 140px;
+  padding: 12px;
+  border-radius: 6px;
+}
+
+.wiz-tpl-card:hover {
+  border-color: var(--color-primary);
+}
+
+.wiz-tpl-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  height: 48px;
+  align-content: flex-start;
+  margin-bottom: 8px;
+}
+
+.wiz-tpl-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  background: var(--color-primary);
+  opacity: 0.4;
+}
+
+.wiz-tpl-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* ── Step 1: layout grid ── */
+.wiz-layout-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+}
+
+.wiz-layout-preview {
+  width: 100%;
+  height: 100px;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+}
+
+.wiz-layout-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 2px;
+}
+
+.wiz-layout-desc {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+/* ── Starter template picker ── */
+.wiz-starter-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.wiz-starter-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  max-height: 280px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.wiz-starter-card {
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.wiz-starter-card:hover {
+  border-color: var(--color-primary);
+}
+
+.wiz-starter-preview {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  height: 36px;
+  align-content: flex-start;
+  margin-bottom: 8px;
+}
+
+.wiz-starter-dot {
+  width: 16px;
+  height: 14px;
+  border-radius: 3px;
+  background: var(--color-primary);
+  opacity: 0.35;
+}
+
+.wiz-starter-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
+  margin-bottom: 2px;
+}
+
+.wiz-starter-meta {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.wiz-confirm-desc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  max-width: 400px;
+  text-align: center;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Step 1: template confirm ── */
+.wiz-confirm {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 220px;
+  gap: 12px;
+  text-align: center;
+}
+
+.wiz-confirm-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-primary);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wiz-confirm-meta {
+  font-size: 13px;
+  color: var(--color-text-muted);
+  margin: 0;
+}

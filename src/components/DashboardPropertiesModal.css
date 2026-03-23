@@ -1,0 +1,48 @@
+.dpm-collapse {
+  border-radius: 0 !important;
+}
+
+.dpm-collapse .ant-collapse-item {
+  border-bottom: 1px solid var(--color-border) !important;
+  border-radius: 0 !important;
+}
+
+.dpm-collapse .ant-collapse-header {
+  padding: 14px 20px !important;
+  align-items: flex-start !important;
+}
+
+.dpm-collapse .ant-collapse-content-box {
+  padding: 4px 20px 16px !important;
+}
+
+.dpm-section-header {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.dpm-section-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dpm-check {
+  color: var(--color-success);
+  font-size: 13px;
+}
+
+.dpm-section-sub {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.dpm-json {
+  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  font-size: 12px;
+}

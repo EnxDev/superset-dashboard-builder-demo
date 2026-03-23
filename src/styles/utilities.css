@@ -1,0 +1,136 @@
+/* ── Shared utility classes ────────────────────────────────────── */
+
+/* Text truncation */
+.u-truncate {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Shared modal structure — apply to all custom modals */
+.modal-base .ant-modal-content {
+  padding: 0;
+}
+
+.modal-base .ant-modal-header {
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid var(--color-border);
+  margin-bottom: 0;
+}
+
+.modal-base .ant-modal-body {
+  padding: 16px 20px;
+  max-height: 65vh;
+  overflow-y: auto;
+}
+
+.modal-base .ant-modal-footer {
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-border);
+  margin-top: 0;
+}
+
+/* Shared form label styling for modals */
+.modal-form .ant-form-item {
+  margin-bottom: 12px;
+}
+
+.modal-form .ant-form-item-label > label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-weight: 500;
+}
+
+/* Selectable card pattern (used in wizard, template picker) */
+.selectable-card {
+  position: relative;
+  border: 1.5px solid var(--color-border);
+  border-radius: 8px;
+  padding: 12px;
+  cursor: pointer;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  background: var(--color-surface);
+}
+
+.selectable-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 15%, transparent);
+}
+
+.selectable-card--active {
+  border-color: var(--color-primary) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-primary) 20%, transparent) !important;
+}
+
+.selectable-card--disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Check icon positioned top-right in selectable cards */
+.selectable-card__check {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  color: var(--color-primary);
+  font-size: 14px;
+}
+
+/* Icon-only action button (transparent bg, hover primary) */
+.icon-action-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-icon);
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.icon-action-btn:hover {
+  color: var(--color-primary);
+}
+
+.icon-action-btn--danger:hover {
+  color: var(--color-error);
+}
+
+/* Save modal field wrapper */
+.save-modal__field {
+  padding: 8px 0;
+}
+
+.save-modal__label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  display: block;
+  margin-bottom: 6px;
+}
+
+/* Layout mode tag in toolbar */
+.layout-mode-tag {
+  text-transform: capitalize;
+  cursor: default;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* SVG block display (for chart previews) */
+.svg-preview {
+  display: block;
+}
+
+/* Empty readonly hint */
+.readonly-hint {
+  color: var(--color-text-muted);
+  font-size: 13px;
+}
+
+/* XY canvas overlay */
+.xy-overlay {
+  position: absolute;
+  inset: 0;
+}

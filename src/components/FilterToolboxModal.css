@@ -1,0 +1,277 @@
+/* ── Filter Toolbox Modal — Superset-style layout ─────────────────────────── */
+
+.ftm-modal .ant-modal-body {
+  padding: 0 !important;
+}
+
+.ftm-modal .ant-modal-header {
+  padding: 16px 24px;
+  margin: 0;
+}
+
+/* ── Split layout ── */
+.ftm-layout {
+  display: flex;
+  min-height: 520px;
+  max-height: 70vh;
+}
+
+/* ── Left sidebar ── */
+.ftm-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  overflow-y: auto;
+  background: var(--color-bg);
+}
+
+.ftm-new-btn {
+  margin-bottom: 16px;
+  width: 80px;
+}
+
+.ftm-sidebar-section {
+  margin-bottom: 16px;
+}
+
+.ftm-sidebar-heading {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  margin-bottom: 8px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ftm-sidebar-heading::before {
+  content: '▾';
+  font-size: 10px;
+}
+
+.ftm-sidebar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ftm-sidebar-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.12s;
+  border: 1px solid transparent;
+}
+
+.ftm-sidebar-item:hover {
+  background: var(--color-primary-hover);
+}
+
+.ftm-sidebar-item--active {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary);
+}
+
+.ftm-sidebar-drag {
+  color: var(--color-text-muted);
+  font-size: 11px;
+  cursor: grab;
+  flex-shrink: 0;
+}
+
+.ftm-sidebar-input {
+  flex: 1;
+  min-width: 0;
+  border: none !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding: 0 4px !important;
+  font-size: 12px;
+  color: var(--color-primary) !important;
+}
+
+.ftm-sidebar-input:focus {
+  background: var(--color-surface) !important;
+  border: 1px solid var(--color-primary) !important;
+}
+
+.ftm-sidebar-delete {
+  opacity: 0;
+  transition: opacity 0.12s;
+  width: 22px !important;
+  height: 22px !important;
+  padding: 0 !important;
+  flex-shrink: 0;
+}
+
+.ftm-sidebar-item:hover .ftm-sidebar-delete {
+  opacity: 1;
+}
+
+/* ── Right panel ── */
+.ftm-panel {
+  flex: 1;
+  overflow-y: auto;
+  min-width: 0;
+}
+
+.ftm-panel-tabs {
+  height: 100%;
+}
+
+.ftm-panel-tabs .ant-tabs-nav {
+  padding: 0 20px;
+  margin-bottom: 0;
+}
+
+.ftm-panel-tabs .ant-tabs-content-holder {
+  padding: 16px 20px;
+  overflow-y: auto;
+}
+
+.ftm-panel-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  padding: 40px;
+  text-align: center;
+}
+
+/* ── Settings form ── */
+.ftm-form {
+  max-width: 560px;
+}
+
+.ftm-form .ant-form-item {
+  margin-bottom: 12px;
+}
+
+.ftm-form-row {
+  display: flex;
+  gap: 12px;
+}
+
+.ftm-form-half {
+  flex: 1;
+  min-width: 0;
+}
+
+.ftm-required {
+  color: var(--color-error, #EF4444);
+  margin-left: 2px;
+}
+
+/* ── Collapsible sections ── */
+.ftm-section-collapse {
+  margin-bottom: 4px;
+}
+
+.ftm-section-collapse .ant-collapse-header {
+  padding: 8px 0 !important;
+}
+
+.ftm-section-collapse .ant-collapse-content-box {
+  padding: 0 0 8px !important;
+}
+
+.ftm-section-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* ── Checkboxes ── */
+.ftm-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.ftm-checkboxes .ant-checkbox-wrapper {
+  font-size: 12px;
+}
+
+.ftm-info {
+  color: var(--color-text-muted);
+  font-size: 13px;
+  margin-left: 4px;
+  cursor: help;
+}
+
+/* ── Settings body ── */
+.ftm-settings-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.ftm-settings-body .ant-form-item {
+  margin-bottom: 10px;
+}
+
+/* ── Scoping pane ── */
+.ftm-scoping {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.ftm-scoping-desc {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.ftm-scoping-mode {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 360px;
+}
+
+.ftm-scope-mode-btn {
+  text-align: left !important;
+  justify-content: flex-start !important;
+}
+
+.ftm-scoping-targets {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: var(--color-bg);
+  border-radius: 6px;
+  border: 1px solid var(--color-border);
+}
+
+.ftm-scoping-targets-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+.ftm-scoping-empty {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.ftm-scoping-checkboxes {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ftm-scoping-checkboxes .ant-checkbox-wrapper {
+  font-size: 12px;
+}

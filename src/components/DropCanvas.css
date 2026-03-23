@@ -1,0 +1,279 @@
+.drop-canvas {
+  flex: 1;
+  position: relative;
+  overflow: auto;
+  background: var(--color-bg);
+  transition: background 0.15s, box-shadow 0.15s;
+}
+
+/* dashed border hint when empty */
+.drop-canvas--empty {
+  background-image: repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 19px,
+      var(--color-border) 19px,
+      var(--color-border) 20px
+    ),
+    repeating-linear-gradient(
+      90deg,
+      transparent,
+      transparent 19px,
+      var(--color-border) 19px,
+      var(--color-border) 20px
+    );
+  background-size: 20px 20px;
+  opacity: 0.6;
+}
+
+.drop-canvas--empty.drop-canvas--over {
+  opacity: 1;
+}
+
+/* Canvas is a valid drop target — subtle pulsing border when a tree item is being dragged */
+.drop-canvas--drop-ready {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 40%, transparent);
+  animation: drop-ready-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes drop-ready-pulse {
+  0%, 100% { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 25%, transparent); }
+  50%      { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--color-primary) 55%, transparent); }
+}
+
+/* Active drag-over highlight — item is directly over the canvas */
+.drop-canvas--over {
+  background-color: var(--color-primary-hover);
+  box-shadow: inset 0 0 0 3px var(--color-primary);
+  animation: none;
+}
+
+/* centered empty hint text */
+.drop-canvas__hint {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  pointer-events: none;
+  color: var(--color-text-muted);
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.drop-canvas__hint-icon {
+  font-size: 32px;
+  line-height: 1;
+  color: var(--color-primary);
+  opacity: 0.4;
+}
+
+/* ── Layout mode containers ─────────────────────────────────────────────────── */
+
+/* XY: free absolute positioning — canvas needs overflow:auto so cards aren't clipped */
+.drop-canvas--xy {
+  overflow: auto;
+}
+
+/* Grid layout */
+.dc-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--dc-cols, 3), 1fr);
+  gap: 8px;
+  padding: 12px;
+  align-content: start;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Grid drop indicator */
+.dc-grid__drop-indicator {
+  border: 2px dashed var(--color-primary);
+  border-radius: 6px;
+  background: var(--color-primary-hover);
+  opacity: 0.5;
+  pointer-events: none;
+  min-height: 160px;
+}
+
+/* Rows layout */
+.dc-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dc-rows .drop-card {
+  width: 100%;
+}
+
+/* Mosaic layout (CSS columns — browser fills gaps) */
+.dc-mosaic {
+  columns: var(--dc-cols, 3);
+  column-gap: 8px;
+  padding: 12px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.dc-mosaic .drop-card {
+  break-inside: avoid;
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+/* Ghost preview shown at the drop position during tree drag */
+.drop-canvas__ghost {
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 2px dashed var(--color-primary);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--color-text);
+  opacity: 0.55;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 1;
+  animation: ghost-fade-in 0.15s ease-out;
+}
+
+@keyframes ghost-fade-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to   { opacity: 0.55; transform: scale(1); }
+}
+
+/* dropped component card — base (XY mode: absolute) */
+.drop-card {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--color-text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: default;
+  transition: box-shadow 0.15s, border-color 0.15s;
+  overflow: hidden;
+  min-width: 80px;
+  min-height: 60px;
+}
+
+/* ── Cards inside flow layouts are NOT absolutely positioned ── */
+.dc-grid .drop-card,
+.dc-rows .drop-card,
+.dc-mosaic .drop-card {
+  position: relative;
+  left: unset !important;
+  top: unset !important;
+  width: 100% !important;
+  min-height: 160px;
+}
+
+.drop-card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.14);
+  border-color: var(--color-primary);
+}
+
+.drop-card__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+  flex-shrink: 0;
+}
+
+.drop-card__type-badge {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 5px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--badge-color, #888) 12%, transparent);
+  color: var(--badge-color, #888);
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+
+.drop-card__label {
+  flex: 1;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.drop-card__body {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  padding: 4px;
+}
+
+.drop-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.drop-card__expand,
+.drop-card__settings,
+.drop-card__remove {
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: var(--color-icon);
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  transition: color 0.15s;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.drop-card__expand:hover,
+.drop-card__settings:hover {
+  color: var(--color-primary);
+}
+
+.drop-card__remove:hover {
+  color: var(--color-error);
+}
+
+/* ── Read-only mode ── */
+.drop-canvas--readonly {
+  background-image: repeating-linear-gradient(
+      0deg, transparent, transparent 19px,
+      var(--color-border) 19px, var(--color-border) 20px
+    ),
+    repeating-linear-gradient(
+      90deg, transparent, transparent 19px,
+      var(--color-border) 19px, var(--color-border) 20px
+    );
+  background-size: 20px 20px;
+  cursor: default;
+}
+
+.drop-card--readonly {
+  cursor: default;
+  pointer-events: none;
+}
+
+.drop-card--readonly:hover {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  border-color: var(--color-border);
+}
