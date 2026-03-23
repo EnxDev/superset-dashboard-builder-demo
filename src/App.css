@@ -140,6 +140,16 @@ body {
   flex-shrink: 0;
 }
 
+.toolbar-dashboard-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 200px;
+}
+
 /* ── Theme toggle button ── */
 .theme-toggle {
   margin-left: auto;

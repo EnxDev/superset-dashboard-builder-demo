@@ -4,6 +4,10 @@ A drag-and-drop dashboard builder that reimagines how dashboards are created ins
 
 > **This is a demo / proof-of-concept.** Nothing is sent to any server. Your browser's `localStorage` is the database, your clicks are the API, and the save button runs on pure localStorage vibes.
 
+![Superset Page Builder Demo](public/superset-page-builder-demo.png)
+
+![Superset Page Builder Demo 2](public/superset-page-builder-demo-2.png)
+
 ---
 
 ## What is this?
@@ -25,12 +29,12 @@ The goal is to prototype ideas for how dashboard building in Superset could feel
 
 ### Layout Modes
 
-| Mode | Description |
-|------|-------------|
-| **Grid** | N-column responsive grid. Charts snap to cells with uniform row heights. Supports column/row spanning. |
-| **Rows** | Full-width horizontal rows stacked vertically. Drag to reorder. |
+| Mode          | Description                                                                                                                    |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| **Grid**      | N-column responsive grid. Charts snap to cells with uniform row heights. Supports column/row spanning.                         |
+| **Rows**      | Full-width horizontal rows stacked vertically. Drag to reorder.                                                                |
 | **Free (XY)** | Place charts anywhere. Collision detection prevents unwanted overlaps. Expand horizontally/vertically to fill available space. |
-| **Mosaic** | Masonry-style layout. Items fill vertical gaps with variable heights. |
+| **Mosaic**    | Masonry-style layout. Items fill vertical gaps with variable heights.                                                          |
 
 Switch between modes at any time — the rearrangement algorithm repositions all items to fit the new layout.
 
@@ -84,14 +88,14 @@ Switch between modes at any time — the rearrangement algorithm repositions all
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | React 18 + TypeScript |
-| UI Library | Ant Design (antd) 6.x |
-| Charts | Apache ECharts 6.x |
-| Drag & Drop | dnd-kit |
-| Build | Vite |
-| Storage | Browser localStorage |
+| Layer       | Technology            |
+| ----------- | --------------------- |
+| Framework   | React 18 + TypeScript |
+| UI Library  | Ant Design (antd) 6.x |
+| Charts      | Apache ECharts 6.x    |
+| Drag & Drop | dnd-kit               |
+| Build       | Vite                  |
+| Storage     | Browser localStorage  |
 
 ---
 
@@ -190,12 +194,12 @@ In XY mode, a spiral-search algorithm finds non-overlapping positions for new it
 
 Everything is stored in the browser:
 
-| Key | Storage | Purpose |
-|-----|---------|---------|
-| `superset_pb_templates` | localStorage | Saved dashboards |
-| `superset_pb_default` | localStorage | Last working state |
-| `theme` | localStorage | Light/dark preference |
-| `demo_dismissed` | sessionStorage | Banner dismissal |
+| Key                     | Storage        | Purpose               |
+| ----------------------- | -------------- | --------------------- |
+| `superset_pb_templates` | localStorage   | Saved dashboards      |
+| `superset_pb_default`   | localStorage   | Last working state    |
+| `theme`                 | localStorage   | Light/dark preference |
+| `demo_dismissed`        | sessionStorage | Banner dismissal      |
 
 ---
 
@@ -217,4 +221,4 @@ This project is provided as-is for demonstration and experimentation purposes.
 
 ---
 
-*Built with curiosity and a healthy disregard for backend dependencies.*
+_Built with curiosity and a healthy disregard for backend dependencies._

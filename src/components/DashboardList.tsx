@@ -13,7 +13,7 @@ import './DashboardList.css';
 interface Props {
   onOpen: (tpl: Template) => void;
   onNew: () => void;
-  onStartFromStarter?: (items: CanvasItem[], mode: LayoutMode, cols: number) => void;
+  onStartFromStarter?: (items: CanvasItem[], mode: LayoutMode, cols: number, name: string) => void;
 }
 
 function timeAgo(iso: string): string {
@@ -54,7 +54,7 @@ export default function DashboardList({ onOpen, onNew, onStartFromStarter }: Pro
       ...it,
       id: `${it.key}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     }));
-    onStartFromStarter(freshItems, st.layoutMode, st.gridCols);
+    onStartFromStarter(freshItems, st.layoutMode, st.gridCols, st.name);
   };
 
   const filtered = templates.filter((t) =>

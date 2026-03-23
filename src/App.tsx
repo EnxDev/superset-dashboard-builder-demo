@@ -46,7 +46,7 @@ const darkTokens = {
 
 export default function App() {
   const [mode, setMode] = useState<Mode>(
-    () => (localStorage.getItem('theme') as Mode) ?? 'light',
+    () => (localStorage.getItem('theme') as Mode) ?? 'dark',
   );
 
   const [view, setView]             = useState<View>('list');
@@ -103,11 +103,11 @@ export default function App() {
 
   const openDetail = (tpl: Template) => { setActive(tpl); setView('detail'); setFullscreen(false); };
 
-  const openEditor = (tpl?: Template, preloadItems?: CanvasItem[], mode?: LayoutMode, cols?: number) => {
+  const openEditor = (tpl?: Template, preloadItems?: CanvasItem[], mode?: LayoutMode, cols?: number, name?: string) => {
     setActive(tpl ?? null);
     setItems(preloadItems ?? tpl?.items ?? []);
     setHistory([]);
-    setTplName(tpl?.name ?? 'My Dashboard');
+    setTplName(name ?? tpl?.name ?? 'My Dashboard');
     setTplProps(tpl?.properties ?? {});
     setSavedAt(tpl?.savedAt ?? null);
     setLayoutMode(mode ?? tpl?.layoutMode ?? 'grid');
@@ -382,8 +382,8 @@ export default function App() {
               <DashboardList onOpen={openDetail} onNew={() => {
                 if (mainRef.current) setCanvasSize({ w: mainRef.current.clientWidth, h: mainRef.current.clientHeight });
                 setWizardOpen(true);
-              }} onStartFromStarter={(starterItems, mode, cols) => {
-                openEditor(undefined, starterItems, mode, cols);
+              }} onStartFromStarter={(starterItems, mode, cols, name) => {
+                openEditor(undefined, starterItems, mode, cols, name);
               }} />
             )}
 
@@ -436,8 +436,10 @@ export default function App() {
                 <div className="canvas-toolbar">
                   <button className="toolbar-btn" onClick={() => activeTemplate ? openDetail(activeTemplate) : openList()}>
                     <ArrowLeftOutlined />
-                    {activeTemplate ? activeTemplate.name : 'Dashboards'}
+                    Dashboards
                   </button>
+                  <div className="toolbar-divider" />
+                  <span className="toolbar-dashboard-name">{templateName}</span>
                   <div className="toolbar-divider" />
 
                   <div className="layout-switcher">
