@@ -15,7 +15,7 @@ export default function TagCloudPreview() {
     <svg viewBox="0 0 160 84" width="100%" height="100%" className="svg-preview" role="img" aria-label="Tag cloud preview">
       {tags.map((t, i) => (
         <g key={i}>
-          <rect x={t.x} y={t.y} width={t.w} height={t.h} rx={t.h / 2} fill="var(--color-primary)" opacity={t.op * 0.15} stroke="var(--color-primary)" strokeWidth="0.5" opacity2={t.op * 0.4} />
+          <rect x={t.x} y={t.y} width={t.w} height={t.h} rx={t.h / 2} fill="var(--color-primary)" opacity={t.op * 0.15} stroke="var(--color-primary)" strokeWidth="0.5" strokeOpacity={t.op * 0.4} />
           <rect x={t.x + 6} y={t.y + (t.h - 3) / 2} width={t.w - 12} height="3" rx="1.5" fill="var(--color-primary)" opacity={t.op * 0.5} />
         </g>
       ))}
