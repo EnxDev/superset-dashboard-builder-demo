@@ -175,17 +175,20 @@ export function rearrangeForLayout(
       }));
 
     case 'xy': {
-      const cols = gridCols;
-      const cellW = Math.floor((canvasW - LAYOUT_GAP * (cols + 1)) / cols);
+      const cols = Math.max(1, gridCols);
+      const effectiveW = Math.max(canvasW, cols * (DEFAULT_CARD_W + LAYOUT_GAP));
+      const cellW = Math.max(DEFAULT_CARD_W, Math.floor((effectiveW - LAYOUT_GAP * (cols + 1)) / cols));
       const cellH = DEFAULT_CARD_H;
       return sorted.map((item, i) => {
         const c = i % cols;
         const r = Math.floor(i / cols);
+        const x = Math.max(0, LAYOUT_GAP + c * (cellW + LAYOUT_GAP));
+        const y = Math.max(0, LAYOUT_GAP + r * (cellH + LAYOUT_GAP));
         return {
           ...item,
-          x: LAYOUT_GAP + c * (cellW + LAYOUT_GAP),
-          y: LAYOUT_GAP + r * (cellH + LAYOUT_GAP),
-          w: cellW,
+          x,
+          y,
+          w: Math.min(cellW, effectiveW - x),
           h: cellH,
         };
       });

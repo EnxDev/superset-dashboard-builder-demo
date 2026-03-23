@@ -1,5 +1,7 @@
 # Superset Dashboard Playground
 
+**[Live Demo](https://superset-dashboard-builder-demo.vercel.app/)**
+
 A drag-and-drop dashboard builder that reimagines how dashboards are created inside [Apache Superset](https://superset.apache.org/). This is a fully client-side prototype — no backend, no database, just your browser doing all the heavy lifting.
 
 > **This is a demo / proof-of-concept.** Nothing is sent to any server. Your browser's `localStorage` is the database, your clicks are the API, and the save button runs on pure localStorage vibes.

@@ -7,7 +7,7 @@ export function resolvePreset(preset: LayoutPreset, mode: LayoutMode, canvasW: n
   const cols = preset.cols ?? 3;
   const colW = Math.floor((canvasW - LAYOUT_GAP * (cols - 1)) / cols);
 
-  return preset.slots.map((s) => {
+  const resolved = preset.slots.map((s) => {
     const id = `${s.key}-${Date.now()}-${uid()}`;
     const base = { id, key: s.key, title: s.title, config: {} };
 
@@ -26,7 +26,27 @@ export function resolvePreset(preset: LayoutPreset, mode: LayoutMode, canvasW: n
       return { ...base, x: 0, y: r * (DEFAULT_ROW_H + LAYOUT_GAP), w: canvasW, h: DEFAULT_ROW_H, row: r };
     }
 
-    // xy / mosaic — default placement
-    return { ...base, x: 16, y: 16, w: DEFAULT_COL_W, h: DEFAULT_ROW_H };
+    if (mode === 'mosaic') {
+      const c = s.col ?? 0;
+      const r = s.row ?? 0;
+      return { ...base, x: 0, y: 0, w: DEFAULT_COL_W, h: DEFAULT_ROW_H, col: c, row: r, colSpan: 1, rowSpan: 1 };
+    }
+
+    // xy — placeholder position, will be spread below
+    return { ...base, x: 0, y: 0, w: DEFAULT_COL_W, h: DEFAULT_ROW_H };
   });
+
+  // For XY mode, spread items in a grid pattern so they don't overlap
+  if (mode === 'xy' && resolved.length > 0) {
+    const spreadCols = Math.max(1, Math.min(cols, Math.ceil(Math.sqrt(resolved.length))));
+    const cellW = DEFAULT_COL_W + LAYOUT_GAP;
+    const cellH = DEFAULT_ROW_H + LAYOUT_GAP;
+    return resolved.map((item, i) => ({
+      ...item,
+      x: LAYOUT_GAP + (i % spreadCols) * cellW,
+      y: LAYOUT_GAP + Math.floor(i / spreadCols) * cellH,
+    }));
+  }
+
+  return resolved;
 }

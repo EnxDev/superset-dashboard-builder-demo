@@ -35,7 +35,7 @@ interface Props {
 
 export default function LeftPanel({ position = 'left', onPositionChange }: Props) {
   const [size, setSize] = useState(400);
-  const [activeKey, setActiveKey] = useState<string>("library");
+  const [activeKey, setActiveKey] = useState<string>("blocks");
   const dragging = useRef(false);
   const startPos = useRef(0);
   const startSize = useRef(0);

@@ -43,6 +43,20 @@
   line-height: 1.4;
 }
 
+.wiz-mode-source-tag {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-size: 9px !important;
+  line-height: 16px !important;
+  padding: 0 5px !important;
+  margin: 0 !important;
+}
+
+.wiz-layout-hint {
+  font-size: 12px;
+}
+
 .wiz-tpl-mode {
   font-size: 10px;
   color: var(--color-primary);

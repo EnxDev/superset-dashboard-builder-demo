@@ -15,7 +15,7 @@ import DashboardDetail from './components/DashboardDetail';
 import DashboardPropertiesModal from './components/DashboardPropertiesModal';
 import NewDashboardWizard from './components/NewDashboardWizard';
 import {
-  saveTemplate, type CanvasItem, type LayoutMode, type Template, type TemplateProperties,
+  saveTemplate, seedDefaultTemplates, type CanvasItem, type LayoutMode, type Template, type TemplateProperties,
 } from './store/templateStore';
 import { rearrangeForLayout } from './utils/collision';
 import supersetLogo from './assets/superset-logo-horiz.png';
@@ -45,6 +45,9 @@ const darkTokens = {
 };
 
 export default function App() {
+  // Seed default dashboards on first visit
+  useState(() => { seedDefaultTemplates(); });
+
   const [mode, setMode] = useState<Mode>(
     () => (localStorage.getItem('theme') as Mode) ?? 'dark',
   );
@@ -243,9 +246,9 @@ export default function App() {
     if (newMode === layoutMode) return;
     if (items.length > 0) {
       pushHistory(items);
-      const el = mainRef.current;
-      const canvasW = el ? el.clientWidth : 900;
-      const canvasH = el ? el.clientHeight : 600;
+      const size = canvasRef.current?.getSize();
+      const canvasW = size?.w ?? 900;
+      const canvasH = size?.h ?? 600;
       const rearranged = rearrangeForLayout(items, newMode, gridCols, canvasW, canvasH);
       setItems(rearranged);
     }

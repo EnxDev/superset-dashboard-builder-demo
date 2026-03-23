@@ -1,10 +1,11 @@
 import { useState } from 'react';
-import { Modal, Steps, Tag, Tooltip } from 'antd';
-import { CheckOutlined, FileOutlined, RocketOutlined } from '@ant-design/icons';
+import { Modal, Steps, Tag, Tooltip, Alert } from 'antd';
+import { CheckOutlined, FileOutlined, RocketOutlined, SwapOutlined } from '@ant-design/icons';
 import { loadTemplates, type CanvasItem, type LayoutMode, type Template } from '../store/templateStore';
 import { LAYOUT_MODES, type LayoutModeOption } from '../data/layoutModes';
 import { PRESETS_BY_MODE, type LayoutPreset } from '../data/layoutPresets';
 import { resolvePreset } from '../data/presetResolver';
+import { rearrangeForLayout } from '../utils/collision';
 import { STARTER_TEMPLATES, STARTER_CATEGORY_LABELS, type StarterTemplate, type StarterCategory } from '../data/starterTemplates';
 import './NewDashboardWizard.css';
 
@@ -19,62 +20,94 @@ interface Props {
 
 export default function NewDashboardWizard({ open, onCancel, onConfirm, canvasSize }: Props) {
   const [step, setStep] = useState(0);
-  const [selectedMode, setSelectedMode] = useState<LayoutModeOption>(LAYOUT_MODES[0]);
-  const [selectedPreset, setSelectedPreset] = useState<LayoutPreset | null>(null);
+
+  // Step 0: starting point
   const [startFrom, setStartFrom] = useState<'layout' | 'template' | 'starter'>('layout');
-  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [selectedStarter, setSelectedStarter] = useState<StarterTemplate | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<Template | null>(null);
   const [starterFilter, setStarterFilter] = useState<StarterCategory | 'all'>('all');
+
+  // Step 1: layout mode
+  const [selectedMode, setSelectedMode] = useState<LayoutModeOption>(LAYOUT_MODES[0]);
+
+  // Step 2: preset (only for 'layout' start)
+  const [selectedPreset, setSelectedPreset] = useState<LayoutPreset | null>(null);
 
   const templates = loadTemplates();
   const presetsForMode = PRESETS_BY_MODE[selectedMode.id];
 
-  // Filter starters by selected layout mode, then by category
-  const startersForMode = STARTER_TEMPLATES.filter((s) => s.layoutMode === selectedMode.id);
   const filteredStarters = starterFilter === 'all'
-    ? startersForMode
-    : startersForMode.filter((s) => s.category === starterFilter);
+    ? STARTER_TEMPLATES
+    : STARTER_TEMPLATES.filter((s) => s.category === starterFilter);
 
-  // Filter saved templates by selected layout mode
-  const templatesForMode = templates.filter((t) => (t.layoutMode ?? 'grid') === selectedMode.id);
+  // Determine if the source layout differs from the selected layout
+  const sourceLayout: LayoutMode | null =
+    startFrom === 'starter' && selectedStarter ? selectedStarter.layoutMode :
+    startFrom === 'template' && selectedTemplate ? (selectedTemplate.layoutMode ?? 'grid') :
+    null;
+  const layoutChanged = sourceLayout !== null && sourceLayout !== selectedMode.id;
 
   const reset = () => {
     setStep(0);
+    setStartFrom('layout');
+    setSelectedStarter(null);
+    setSelectedTemplate(null);
+    setStarterFilter('all');
     setSelectedMode(LAYOUT_MODES[0]);
     setSelectedPreset(null);
-    setStartFrom('layout');
-    setSelectedTemplate(null);
-    setSelectedStarter(null);
-    setStarterFilter('all');
+  };
+
+  // When picking a starter/template, auto-set the layout to match it
+  const handleStarterSelect = (st: StarterTemplate) => {
+    setSelectedStarter(st);
+    const mode = LAYOUT_MODES.find((m) => m.id === st.layoutMode);
+    if (mode) setSelectedMode(mode);
+  };
+
+  const handleTemplateSelect = (tpl: Template) => {
+    setSelectedTemplate(tpl);
+    const mode = LAYOUT_MODES.find((m) => m.id === (tpl.layoutMode ?? 'grid'));
+    if (mode) setSelectedMode(mode);
   };
 
   const handleModeChange = (m: LayoutModeOption) => {
     setSelectedMode(m);
     setSelectedPreset(null);
-    setSelectedTemplate(null);
-    setSelectedStarter(null);
-    setStarterFilter('all');
   };
 
   const handleOk = () => {
     if (step === 0) { setStep(1); return; }
     if (step === 1) { setStep(2); return; }
 
-    // Step 2: confirm
+    // Step 2: confirm & create
+    const targetMode = selectedMode.id;
+    const { w, h } = canvasSize;
+    const cw = w > 0 ? w : 900;
+    const ch = h > 0 ? h : 600;
+
     if (startFrom === 'starter' && selectedStarter) {
-      // Deep-clone items and assign fresh IDs so each dashboard is independent
-      const freshItems = selectedStarter.items.map((it) => ({
+      let items = selectedStarter.items.map((it) => ({
         ...it,
         id: `${it.key}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       }));
-      onConfirm(freshItems, selectedStarter.layoutMode, selectedStarter.gridCols);
+      const cols = selectedStarter.gridCols;
+      // Rearrange if layout mode was changed
+      if (layoutChanged) {
+        items = rearrangeForLayout(items, targetMode, cols, cw, ch);
+      }
+      onConfirm(items, targetMode, cols);
     } else if (startFrom === 'template' && selectedTemplate) {
-      onConfirm([...selectedTemplate.items], selectedTemplate.layoutMode ?? 'grid', selectedTemplate.gridCols ?? 3);
+      let items = [...selectedTemplate.items];
+      const cols = selectedTemplate.gridCols ?? 3;
+      if (layoutChanged) {
+        items = rearrangeForLayout(items, targetMode, cols, cw, ch);
+      }
+      onConfirm(items, targetMode, cols);
     } else {
+      // From preset
       const preset = selectedPreset ?? presetsForMode[0];
-      const { w, h } = canvasSize;
-      const resolved = resolvePreset(preset, selectedMode.id, w > 0 ? w : 900, h > 0 ? h : 600);
-      onConfirm(resolved, selectedMode.id, preset.cols ?? 3);
+      const resolved = resolvePreset(preset, targetMode, cw, ch);
+      onConfirm(resolved, targetMode, preset.cols ?? 3);
     }
     reset();
   };
@@ -87,8 +120,7 @@ export default function NewDashboardWizard({ open, onCancel, onConfirm, canvasSi
   const handleCancel = () => { reset(); onCancel(); };
 
   const canProceed = () => {
-    if (step === 0) return true;
-    if (step === 1) {
+    if (step === 0) {
       if (startFrom === 'template') return selectedTemplate !== null;
       if (startFrom === 'starter') return selectedStarter !== null;
       return true;
@@ -118,35 +150,14 @@ export default function NewDashboardWizard({ open, onCancel, onConfirm, canvasSi
         size="small"
         className="wiz-steps"
         items={[
-          { title: 'Layout mode' },
           { title: 'Starting point' },
-          { title: 'Preset' },
+          { title: 'Layout mode' },
+          { title: 'Confirm' },
         ]}
       />
 
-      {/* ── Step 0: layout mode ── */}
+      {/* ── Step 0: Starting point ── */}
       {step === 0 && (
-        <div className="wiz-body">
-          <p className="wiz-subtitle">Choose how your dashboard arranges charts</p>
-          <div className="wiz-mode-grid">
-            {LAYOUT_MODES.map((m) => (
-              <div
-                key={m.id}
-                className={`wiz-mode-card selectable-card ${selectedMode.id === m.id ? 'selectable-card--active' : ''}`}
-                onClick={() => handleModeChange(m)}
-              >
-                {selectedMode.id === m.id && <CheckOutlined className="selectable-card__check" />}
-                <div className="wiz-mode-preview">{m.preview}</div>
-                <div className="wiz-mode-label">{m.label}</div>
-                <div className="wiz-mode-desc">{m.description}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* ── Step 1: starting point ── */}
-      {step === 1 && (
         <div className="wiz-body">
           <p className="wiz-subtitle">How do you want to start?</p>
           <div className="wiz-start-options">
@@ -167,8 +178,8 @@ export default function NewDashboardWizard({ open, onCancel, onConfirm, canvasSi
             </div>
 
             <div
-              className={`wiz-start-card selectable-card ${startFrom === 'starter' ? 'selectable-card--active' : ''} ${startersForMode.length === 0 ? 'selectable-card--disabled' : ''}`}
-              onClick={() => startersForMode.length > 0 && setStartFrom('starter')}
+              className={`wiz-start-card selectable-card ${startFrom === 'starter' ? 'selectable-card--active' : ''}`}
+              onClick={() => setStartFrom('starter')}
             >
               {startFrom === 'starter' && <CheckOutlined className="selectable-card__check" />}
               <div className="wiz-start-icon">
@@ -176,15 +187,13 @@ export default function NewDashboardWizard({ open, onCancel, onConfirm, canvasSi
               </div>
               <div className="wiz-start-label">From a starter template</div>
               <div className="wiz-start-desc">
-                {startersForMode.length > 0
-                  ? `${startersForMode.length} pre-built ${selectedMode.label} dashboard${startersForMode.length !== 1 ? 's' : ''} available.`
-                  : `No starter templates for ${selectedMode.label} mode.`}
+                {STARTER_TEMPLATES.length} pre-built dashboards for common analytics use cases.
               </div>
             </div>
 
             <div
-              className={`wiz-start-card selectable-card ${startFrom === 'template' ? 'selectable-card--active' : ''} ${templatesForMode.length === 0 ? 'selectable-card--disabled' : ''}`}
-              onClick={() => templatesForMode.length > 0 && setStartFrom('template')}
+              className={`wiz-start-card selectable-card ${startFrom === 'template' ? 'selectable-card--active' : ''} ${templates.length === 0 ? 'selectable-card--disabled' : ''}`}
+              onClick={() => templates.length > 0 && setStartFrom('template')}
             >
               {startFrom === 'template' && <CheckOutlined className="selectable-card__check" />}
               <div className="wiz-start-icon">
@@ -192,9 +201,9 @@ export default function NewDashboardWizard({ open, onCancel, onConfirm, canvasSi
               </div>
               <div className="wiz-start-label">From a saved template</div>
               <div className="wiz-start-desc">
-                {templatesForMode.length === 0
-                  ? `No saved ${selectedMode.label} templates yet.`
-                  : `${templatesForMode.length} ${selectedMode.label} template${templatesForMode.length !== 1 ? 's' : ''} available.`}
+                {templates.length === 0
+                  ? 'No saved templates yet.'
+                  : `${templates.length} template${templates.length !== 1 ? 's' : ''} available.`}
               </div>
             </div>
           </div>
@@ -225,7 +234,7 @@ export default function NewDashboardWizard({ open, onCancel, onConfirm, canvasSi
                   <Tooltip key={st.id} title={st.description}>
                     <div
                       className={`wiz-starter-card selectable-card ${selectedStarter?.id === st.id ? 'selectable-card--active' : ''}`}
-                      onClick={() => setSelectedStarter(st)}
+                      onClick={() => handleStarterSelect(st)}
                     >
                       {selectedStarter?.id === st.id && <CheckOutlined className="selectable-card__check" />}
                       <div className="wiz-starter-preview">
@@ -242,15 +251,15 @@ export default function NewDashboardWizard({ open, onCancel, onConfirm, canvasSi
             </div>
           )}
 
-          {startFrom === 'template' && templatesForMode.length > 0 && (
+          {startFrom === 'template' && templates.length > 0 && (
             <div className="wiz-template-list">
-              <p className="wiz-subtitle" style={{ marginTop: 16 }}>Select a {selectedMode.label} template</p>
+              <p className="wiz-subtitle" style={{ marginTop: 16 }}>Select a template</p>
               <div className="wiz-tpl-grid">
-                {templatesForMode.map((tpl) => (
+                {templates.map((tpl) => (
                   <Tooltip key={tpl.id} title={`${tpl.items.length} chart${tpl.items.length !== 1 ? 's' : ''} · ${tpl.layoutMode ?? 'grid'}`}>
                     <div
                       className={`wiz-tpl-card selectable-card ${selectedTemplate?.id === tpl.id ? 'selectable-card--active' : ''}`}
-                      onClick={() => setSelectedTemplate(tpl)}
+                      onClick={() => handleTemplateSelect(tpl)}
                     >
                       {selectedTemplate?.id === tpl.id && <CheckOutlined className="selectable-card__check" />}
                       <div className="wiz-tpl-preview">
@@ -267,7 +276,45 @@ export default function NewDashboardWizard({ open, onCancel, onConfirm, canvasSi
         </div>
       )}
 
-      {/* ── Step 2: preset picker (only for layout start) ── */}
+      {/* ── Step 1: Layout mode ── */}
+      {step === 1 && (
+        <div className="wiz-body">
+          <p className="wiz-subtitle">Choose how your dashboard arranges charts</p>
+
+          {/* Show which layout the source uses */}
+          {sourceLayout && (
+            <Alert
+              type="info"
+              showIcon
+              className="wiz-layout-hint"
+              message={
+                layoutChanged
+                  ? <><SwapOutlined /> Items will be rearranged from <Tag>{sourceLayout}</Tag> to <Tag>{selectedMode.id}</Tag> layout.</>
+                  : <>Matches the source layout: <Tag>{sourceLayout}</Tag></>
+              }
+              style={{ marginBottom: 12 }}
+            />
+          )}
+
+          <div className="wiz-mode-grid">
+            {LAYOUT_MODES.map((m) => (
+              <div
+                key={m.id}
+                className={`wiz-mode-card selectable-card ${selectedMode.id === m.id ? 'selectable-card--active' : ''}`}
+                onClick={() => handleModeChange(m)}
+              >
+                {selectedMode.id === m.id && <CheckOutlined className="selectable-card__check" />}
+                {sourceLayout === m.id && <Tag color="blue" className="wiz-mode-source-tag">source</Tag>}
+                <div className="wiz-mode-preview">{m.preview}</div>
+                <div className="wiz-mode-label">{m.label}</div>
+                <div className="wiz-mode-desc">{m.description}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* ── Step 2: Confirm / Preset picker ── */}
       {step === 2 && (
         <div className="wiz-body">
           {startFrom === 'layout' ? (
@@ -299,9 +346,18 @@ export default function NewDashboardWizard({ open, onCancel, onConfirm, canvasSi
               <div className="wiz-confirm-name"><RocketOutlined /> {selectedStarter.name}</div>
               <p className="wiz-confirm-meta">
                 {selectedStarter.items.length} component(s) ·
-                Layout: {selectedStarter.layoutMode} ·
+                Layout: <Tag>{selectedMode.id}</Tag> ·
                 {STARTER_CATEGORY_LABELS[selectedStarter.category]}
               </p>
+              {layoutChanged && (
+                <Alert
+                  type="info"
+                  showIcon
+                  icon={<SwapOutlined />}
+                  message={`Items will be rearranged from ${sourceLayout} to ${selectedMode.id} layout.`}
+                  style={{ marginTop: 8 }}
+                />
+              )}
               <p className="wiz-confirm-desc">{selectedStarter.description}</p>
             </div>
           ) : (
@@ -310,8 +366,17 @@ export default function NewDashboardWizard({ open, onCancel, onConfirm, canvasSi
               <div className="wiz-confirm-name"><FileOutlined /> {selectedTemplate?.name ?? '—'}</div>
               <p className="wiz-confirm-meta">
                 {selectedTemplate?.items.length ?? 0} chart(s) ·
-                Layout: {selectedTemplate?.layoutMode ?? 'grid'}
+                Layout: <Tag>{selectedMode.id}</Tag>
               </p>
+              {layoutChanged && (
+                <Alert
+                  type="info"
+                  showIcon
+                  icon={<SwapOutlined />}
+                  message={`Items will be rearranged from ${sourceLayout} to ${selectedMode.id} layout.`}
+                  style={{ marginTop: 8 }}
+                />
+              )}
             </div>
           )}
         </div>

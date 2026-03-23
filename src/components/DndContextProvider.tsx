@@ -90,14 +90,16 @@ export default function DndContextProvider({
 
     // ── Tree → Canvas drop ────────────────────────────────────────────────
     if (data.source === 'tree') {
-      // Must drop over the canvas droppable
-      if (!over || over.id !== 'canvas-droppable') return;
+      // Accept drop if over the canvas droppable OR over any existing canvas card
+      if (!over) return;
+      const isCanvasDrop = over.id === 'canvas-droppable';
+      const isOverCanvasCard = items.some((it) => it.id === over.id);
+      if (!isCanvasDrop && !isOverCanvasCard) return;
 
       const rect = canvasRectRef.current;
       if (!rect) return;
 
       // Calculate drop position relative to canvas
-      // The active's initial rect + delta gives the screen position
       const activeRect = active.rect.current.translated;
       if (!activeRect) return;
 

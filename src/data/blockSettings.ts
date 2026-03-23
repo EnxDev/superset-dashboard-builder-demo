@@ -415,6 +415,18 @@ const settingsMap: Record<string, BlockSettingsConfig> = {
     ],
   },
 
+  container: {
+    type: 'container',
+    label: 'Container',
+    category: 'layout',
+    fields: [
+      ...commonFields,
+      { key: 'background', label: 'Background color', type: 'color' },
+      { key: 'padding', label: 'Padding (px)', type: 'number', defaultValue: 16, min: 0, max: 64 },
+      { key: 'border', label: 'Show border', type: 'toggle', defaultValue: true },
+    ],
+  },
+
   header: {
     type: 'header',
     label: 'Header',
