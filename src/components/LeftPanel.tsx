@@ -14,7 +14,7 @@ const collections = [
   {
     key: "blocks",
     label: "Blocks",
-    description: "Layout elements",
+    description: "Layout & structure",
     icon: <LayoutOutlined />,
     data: treeData,
   },

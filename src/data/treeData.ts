@@ -207,6 +207,30 @@ export const libraryData: ComponentNode[] = [
       },
     ],
   },
+  {
+    key: 'extensions',
+    title: 'Extensions',
+    children: [
+      {
+        key: 'ext-community',
+        title: 'Community',
+        children: [
+          { key: 'ext-community-custom-viz', title: 'Custom Visualization' },
+          { key: 'ext-community-iframe', title: 'Iframe' },
+          { key: 'ext-community-html', title: 'HTML' },
+        ],
+      },
+      {
+        key: 'ext-third-party',
+        title: 'Third Party',
+        children: [
+          { key: 'ext-third-party-powerbi', title: 'Power BI Embed' },
+          { key: 'ext-third-party-tableau', title: 'Tableau Embed' },
+          { key: 'ext-third-party-looker', title: 'Looker Embed' },
+        ],
+      },
+    ],
+  },
 ];
 
 // ── Blocks: Layout elements only ─────────────────────────────────────────────
@@ -214,7 +238,7 @@ export const libraryData: ComponentNode[] = [
 export const treeData: ComponentNode[] = [
   {
     key: 'layout',
-    title: 'Layout Elements',
+    title: 'Layout',
     children: [
       {
         key: 'layout-structure',

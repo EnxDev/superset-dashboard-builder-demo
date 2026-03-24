@@ -117,9 +117,9 @@ export default function ComponentTree({ data, showDelete, onDelete, positionPick
   // Pre-compute all keys once when data changes (not on every render)
   const allKeys = useMemo(() => collectAllKeys(data), [data]);
 
-  // Default expanded: all except deeply-nested chart library leaves
+  // Default: only the first top-level node expanded
   const [expandedKeys, setExpandedKeys] = useState<string[]>(() =>
-    allKeys.filter((k) => !k.includes('pie-') && !k.includes('bar-') && !k.includes('line-'))
+    data.length > 0 ? [data[0].key] : []
   );
 
   // Memoize filtered + transformed tree — only recomputes when data or search change
@@ -155,11 +155,9 @@ export default function ComponentTree({ data, showDelete, onDelete, positionPick
     const isAlreadyActive = activeChip === key;
 
     if (isAlreadyActive) {
-      // Deselect — expand all again
+      // Deselect — reset to first node expanded
       setActiveChip(null);
-      setExpandedKeys(
-        allKeys.filter((k) => !k.includes('pie-') && !k.includes('bar-') && !k.includes('line-'))
-      );
+      setExpandedKeys(data.length > 0 ? [data[0].key] : []);
       return;
     }
 
