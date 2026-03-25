@@ -22,6 +22,9 @@ export { default as HeaderPreview } from './HeaderPreview';
 export { default as DividerPreview } from './DividerPreview';
 export { default as MarkdownPreview } from './MarkdownPreview';
 export { default as SpacerPreview } from './SpacerPreview';
+export { default as LabelPreview } from './LabelPreview';
+export { default as PostitPreview } from './PostitPreview';
+export { default as DisplayControlPreview } from './DisplayControlPreview';
 export { default as GridContainerPreview } from './GridContainerPreview';
 
 // Chart sub-types

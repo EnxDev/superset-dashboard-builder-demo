@@ -205,14 +205,15 @@ export default function App() {
     });
   };
 
-  const updateItemConfig = (id: string, config: Record<string, unknown>) => {
-    setItems((prev) => {
-      pushHistory(prev);
-      return prev.map((it) => it.id === id
-        ? { ...it, title: (config.title as string) || it.title, config }
-        : it
-      );
+  const updateConfigInTree = (items: CanvasItem[], id: string, config: Record<string, unknown>): CanvasItem[] =>
+    items.map((it) => {
+      if (it.id === id) return { ...it, title: (config.title as string) || it.title, config };
+      if (it.children) return { ...it, children: updateConfigInTree(it.children, id, config) };
+      return it;
     });
+
+  const updateItemConfig = (id: string, config: Record<string, unknown>) => {
+    setItems((prev) => { pushHistory(prev); return updateConfigInTree(prev, id, config); });
   };
 
   const handleUndo = () => {

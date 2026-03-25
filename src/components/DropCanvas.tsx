@@ -157,15 +157,36 @@ const DropCanvas = forwardRef<DropCanvasHandle, Props>(
       }
 
       if (layoutMode === 'grid') {
-        // Snap to next available grid cell
+        // Build a set of every occupied cell, respecting colSpan/rowSpan
         const cols = gridCols;
-        const usedCells = new Set(items.map((it) => `${it.col ?? 0},${it.row ?? 0}`));
+        const usedCells = new Set<string>();
+        for (const it of items) {
+          const c0 = it.col ?? 0;
+          const r0 = it.row ?? 0;
+          const cs = it.colSpan ?? 1;
+          const rs = it.rowSpan ?? 1;
+          for (let r = r0; r < r0 + rs; r++) {
+            for (let c = c0; c < c0 + cs; c++) {
+              usedCells.add(`${c},${r}`);
+            }
+          }
+        }
+
+        const itemColSpan = isContainer ? cols : 1;
+        // Find the first row,col where all cells for this item's span are free
         let col = 0, row = 0;
-        while (usedCells.has(`${col},${row}`)) {
+        const fits = () => {
+          if (col + itemColSpan > cols) return false;
+          for (let c = col; c < col + itemColSpan; c++) {
+            if (usedCells.has(`${c},${row}`)) return false;
+          }
+          return true;
+        };
+        while (!fits()) {
           col++;
           if (col >= cols) { col = 0; row++; }
         }
-        Object.assign(newItem, { col: isContainer ? 0 : col, row, colSpan: isContainer ? gridCols : 1, rowSpan: 1 });
+        Object.assign(newItem, { col, row, colSpan: itemColSpan, rowSpan: 1 });
       } else if (layoutMode === 'rows') {
         const maxRow = items.reduce((max, it) => Math.max(max, (it.row ?? 0)), -1);
         newItem.row = maxRow + 1;
@@ -181,8 +202,17 @@ const DropCanvas = forwardRef<DropCanvasHandle, Props>(
           const rawY = pending.y - DEFAULT_CARD_H / 2;
           const cW = containerEl.current?.clientWidth ?? CANVAS_FALLBACK_W;
           const cH = containerEl.current?.clientHeight ?? CANVAS_FALLBACK_H;
+          // Use actual DOM-measured sizes for collision detection so containers
+          // with auto-height (h=0) are properly accounted for.
+          const measuredItems = items.map((it) => {
+            const el = containerEl.current?.querySelector(`[data-item-id="${it.id}"]`) as HTMLElement | null;
+            if (el) {
+              return { ...it, w: el.offsetWidth, h: el.offsetHeight };
+            }
+            return it;
+          });
           const { x: safeX, y: safeY } = findNonOverlappingPosition(
-            newItem.id, Math.max(0, rawX), Math.max(0, rawY), DEFAULT_CARD_W, DEFAULT_CARD_H, items, cW, cH,
+            newItem.id, Math.max(0, rawX), Math.max(0, rawY), DEFAULT_CARD_W, DEFAULT_CARD_H, measuredItems, cW, cH,
           );
           newItem.x = safeX;
           newItem.y = safeY;

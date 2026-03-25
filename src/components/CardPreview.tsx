@@ -5,7 +5,8 @@ import {
   AlertPreview, AiPreview, MapPreview, GenericPreview, FilterToolboxPreview,
   // Layout
   TabsPreview, RowPreview, ColumnPreview, HeaderPreview, DividerPreview,
-  MarkdownPreview, SpacerPreview, GridContainerPreview,
+  MarkdownPreview, SpacerPreview, GridContainerPreview, LabelPreview, PostitPreview,
+  DisplayControlPreview,
   // Chart sub-types
   BigNumberPreview, TrendlinePreview, PivotPreview,
   // Library widgets
@@ -31,6 +32,9 @@ function resolveType(key: string): string {
   if (k.includes('layout-content-header') || k.endsWith('-header'))       return 'header';
   if (k.includes('layout-content-divider') || k.endsWith('-divider'))     return 'divider';
   if (k.includes('layout-content-spacer') || k.endsWith('-spacer'))       return 'spacer';
+  if (k.includes('layout-content-label') || k.endsWith('-label'))         return 'label';
+  if (k.includes('layout-content-postit') || k.includes('postit'))       return 'postit';
+  if (k.includes('display-control'))                                      return 'display-control';
 
   // ── Tabs ──
   if (k.includes('tabs'))           return 'tabs';
@@ -155,6 +159,52 @@ export default function CardPreview({ item, allItems, readOnly, onUpdateConfig }
   // Tabs render as real Ant Design Tabs with config-driven position & count
   if (type === 'tabs') {
     return <TabsPreview config={item.config} />;
+  }
+
+  // Label renders as a small editable text rectangle
+  if (type === 'label') {
+    return (
+      <LabelPreview
+        text={item.config?.text as string | undefined}
+        textColor={item.config?.textColor as string | undefined}
+        fontSize={item.config?.fontSize as number | undefined}
+        bold={item.config?.bold as boolean | undefined}
+        readOnly={readOnly}
+        onTextChange={(text) => {
+          onUpdateConfig?.(item.id, { ...item.config, text });
+        }}
+      />
+    );
+  }
+
+  // Display Control renders interactive filter controls
+  if (type === 'display-control') {
+    return (
+      <DisplayControlPreview
+        controlType={item.config?.controlType as string | undefined}
+        dataset={item.config?.dataset as string | undefined}
+        column={item.config?.column as string | undefined}
+        multiSelect={item.config?.multiSelect as boolean | undefined}
+        searchEnabled={item.config?.searchEnabled as boolean | undefined}
+        controlLabel={item.config?.controlLabel as string | undefined}
+      />
+    );
+  }
+
+  // Post-it renders as an editable sticky note
+  if (type === 'postit') {
+    return (
+      <PostitPreview
+        content={item.config?.content as string | undefined}
+        bgColor={item.config?.bgColor as string | undefined}
+        textColor={item.config?.textColor as string | undefined}
+        fontSize={item.config?.fontSize as number | undefined}
+        readOnly={readOnly}
+        onContentChange={(content) => {
+          onUpdateConfig?.(item.id, { ...item.config, content });
+        }}
+      />
+    );
   }
 
   // Markdown renders as an editable text area

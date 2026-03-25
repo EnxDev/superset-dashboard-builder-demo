@@ -223,7 +223,7 @@ export default function FilterToolboxModal({
   return (
     <Modal
       open={open}
-      title="Add or edit display controls"
+      title="Add or edit filters"
       okText={isEditing ? 'Save' : 'Save'}
       cancelText="Cancel"
       onOk={handleOk}
@@ -282,10 +282,7 @@ export default function FilterToolboxModal({
             </div>
           </div>
 
-          {/* Display controls stub */}
-          <div className="ftm-sidebar-section">
-            <div className="ftm-sidebar-heading">Display controls (0)</div>
-          </div>
+
         </div>
 
         {/* ── Right panel ── */}

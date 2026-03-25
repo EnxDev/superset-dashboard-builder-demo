@@ -140,6 +140,13 @@ export const libraryData: ComponentNode[] = [
     ],
   },
   {
+    key: 'lib-controls',
+    title: 'Controls',
+    children: [
+      { key: 'lib-controls-display-control', title: 'Display Control' },
+    ],
+  },
+  {
     key: 'lib-data-analytics',
     title: 'Data & Analytics',
     children: [
@@ -234,6 +241,8 @@ export const treeData: ComponentNode[] = [
           { key: 'layout-content-divider', title: 'Divider' },
           { key: 'layout-content-markdown', title: 'Markdown' },
           { key: 'layout-content-spacer', title: 'Spacer' },
+          { key: 'layout-content-label', title: 'Label' },
+          { key: 'layout-content-postit', title: 'Post-it' },
           { key: 'layout-content-filter', title: 'Filter' },
         ],
       },

@@ -4,6 +4,7 @@ import { CloseOutlined, SettingOutlined, ColumnWidthOutlined, ColumnHeightOutlin
 import CanvasCard from '../CanvasCard';
 import { resolveSettings, canAcceptChild } from '../../data/blockSettings';
 import { DEFAULT_CARD_W, DEFAULT_CARD_H } from '../../constants';
+import { hasCollision } from '../../utils/collision';
 import type { CanvasItem } from '../../store/templateStore';
 
 export interface ContainerCardProps {
@@ -92,10 +93,55 @@ export default function ContainerCard({
       const dy = ev.clientY - startY;
       const patch: Record<string, unknown> = {};
 
-      if (resizesRight) patch.w = clampW(startW + dx);
-      if (resizesLeft) patch.w = clampW(startW - dx);
-      if (resizesBottom) patch.h = Math.max(80, startH + dy);
-      if (resizesTop) patch.h = Math.max(80, startH - dy);
+      let newW = startW;
+      let newH = startH;
+      if (resizesRight) { newW = clampW(startW + dx); patch.w = newW; }
+      if (resizesLeft) { newW = clampW(startW - dx); patch.w = newW; }
+      if (resizesBottom) { newH = Math.max(80, startH + dy); patch.h = newH; }
+      if (resizesTop) { newH = Math.max(80, startH - dy); patch.h = newH; }
+
+      // Proportionally scale children when the container is resized,
+      // then resolve any overlaps so no element sits on top of another.
+      if (Object.keys(patch).length > 0 && children.length > 0) {
+        const scaleX = newW / startW;
+        const scaleY = newH / startH;
+
+        // First pass: proportional scale
+        const scaled = children.map((child) => {
+          const s = { ...child };
+          if (scaleX !== 1) {
+            s.x = Math.round((child.x ?? 0) * scaleX);
+            s.w = Math.max(60, Math.round((child.w ?? DEFAULT_CARD_W) * scaleX));
+          }
+          if (scaleY !== 1) {
+            s.y = Math.round((child.y ?? 0) * scaleY);
+            s.h = Math.max(40, Math.round((child.h ?? DEFAULT_CARD_H) * scaleY));
+          }
+          // Clamp within new container bounds
+          s.x = Math.max(0, Math.min(s.x, newW - s.w));
+          s.y = Math.max(0, s.y);
+          return s;
+        });
+
+        // Second pass: resolve overlaps — place each item so it doesn't collide with previously placed items
+        const placed: CanvasItem[] = [];
+        for (const child of scaled) {
+          const cw = child.w ?? DEFAULT_CARD_W;
+          const ch = child.h ?? DEFAULT_CARD_H;
+          if (!hasCollision(child.id, child.x, child.y, cw, ch, placed)) {
+            placed.push(child);
+          } else {
+            // Push down until no collision
+            let y = child.y;
+            while (hasCollision(child.id, child.x, y, cw, ch, placed)) {
+              y += 8;
+            }
+            placed.push({ ...child, y });
+          }
+        }
+
+        patch.children = placed;
+      }
 
       if (Object.keys(patch).length > 0) {
         onResize(item.id, patch);
@@ -133,15 +179,21 @@ export default function ContainerCard({
       if (data?.source !== 'tree' || !data.key) return;
       if (!canAcceptChild(item.key, data.key)) return;
 
-      // Calculate drop position relative to the container body
+      // Calculate drop position relative to the container body, clamped within bounds
       let dropX = 0;
       let dropY = 0;
       if (bodyRef.current) {
         const rect = bodyRef.current.getBoundingClientRect();
         const activeRect = active.rect.current.translated;
         if (activeRect) {
-          dropX = Math.max(0, activeRect.left - rect.left + activeRect.width / 2 - DEFAULT_CARD_W / 2);
-          dropY = Math.max(0, activeRect.top - rect.top + activeRect.height / 2 - DEFAULT_CARD_H / 2);
+          dropX = Math.max(0, Math.min(
+            activeRect.left - rect.left + activeRect.width / 2 - DEFAULT_CARD_W / 2,
+            rect.width - DEFAULT_CARD_W,
+          ));
+          dropY = Math.max(0, Math.min(
+            activeRect.top - rect.top + activeRect.height / 2 - DEFAULT_CARD_H / 2,
+            rect.height - DEFAULT_CARD_H,
+          ));
         }
       }
 
@@ -246,13 +298,22 @@ export default function ContainerCard({
     const startY = e.clientY;
     const origX = child.x ?? 0;
     const origY = child.y ?? 0;
+    const childW = child.w ?? DEFAULT_CARD_W;
+    const childH = child.h ?? DEFAULT_CARD_H;
     const el = (e.currentTarget as HTMLElement);
+
+    // Get container body bounds for clamping
+    const containerW = bodyRef.current?.clientWidth ?? Infinity;
+    const containerH = bodyRef.current?.clientHeight ?? Infinity;
+
+    const clampX = (x: number) => Math.max(0, Math.min(x, containerW - childW));
+    const clampY = (y: number) => Math.max(0, Math.min(y, containerH - childH));
 
     const onMouseMove = (ev: MouseEvent) => {
       const dx = ev.clientX - startX;
       const dy = ev.clientY - startY;
-      el.style.left = `${Math.max(0, origX + dx)}px`;
-      el.style.top = `${Math.max(0, origY + dy)}px`;
+      el.style.left = `${clampX(origX + dx)}px`;
+      el.style.top = `${clampY(origY + dy)}px`;
     };
 
     const onMouseUp = (ev: MouseEvent) => {
@@ -264,7 +325,7 @@ export default function ContainerCard({
       const dx = ev.clientX - startX;
       const dy = ev.clientY - startY;
       if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
-        onResize(childId, { x: Math.max(0, origX + dx), y: Math.max(0, origY + dy) });
+        onResize(childId, { x: clampX(origX + dx), y: clampY(origY + dy) });
       }
     };
 

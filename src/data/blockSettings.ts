@@ -72,7 +72,6 @@ const borderFields: SettingsField[] = [
 
 const commonFields: SettingsField[] = [
   { key: 'title', label: 'Title', type: 'text', placeholder: 'Title' },
-  { key: 'visible', label: 'Visible', type: 'toggle', defaultValue: true },
 ];
 
 const chartCommonFields: SettingsField[] = [
@@ -395,6 +394,55 @@ const settingsMap: Record<string, BlockSettingsConfig> = {
     ],
   },
 
+  'display-control': {
+    type: 'display-control',
+    label: 'Display Control',
+    category: 'widget',
+    fields: [
+      ...commonFields,
+      {
+        key: 'controlType',
+        label: 'Control type',
+        type: 'select',
+        defaultValue: 'value',
+        options: [
+          { label: 'Value Select', value: 'value' },
+          { label: 'Range', value: 'range' },
+          { label: 'Time Picker', value: 'time' },
+          { label: 'Time Grain', value: 'timegrain' },
+          { label: 'Time Column', value: 'timecolumn' },
+        ],
+      },
+      {
+        key: 'dataset',
+        label: 'Dataset',
+        type: 'select',
+        options: [
+          { label: 'Sales', value: 'sales' },
+          { label: 'Users', value: 'users' },
+          { label: 'Events', value: 'events' },
+          { label: 'Revenue', value: 'revenue' },
+        ],
+        placeholder: 'Select dataset',
+      },
+      {
+        key: 'column',
+        label: 'Column',
+        type: 'select',
+        options: [
+          { label: 'Category', value: 'category' },
+          { label: 'Region', value: 'region' },
+          { label: 'Status', value: 'status' },
+          { label: 'Date', value: 'date' },
+          { label: 'Country', value: 'country_name' },
+        ],
+      },
+      { key: 'multiSelect', label: 'Multi-select', type: 'toggle', defaultValue: true },
+      { key: 'searchEnabled', label: 'Enable search', type: 'toggle', defaultValue: false },
+      { key: 'controlLabel', label: 'Control label', type: 'text', placeholder: 'Label above the control' },
+    ],
+  },
+
   // ── Tabs ──
   tabs: {
     type: 'tabs',
@@ -489,7 +537,6 @@ const settingsMap: Record<string, BlockSettingsConfig> = {
     category: 'layout',
     fields: [
       { key: 'title', label: 'Title', type: 'text', placeholder: 'Optional label' },
-      { key: 'visible', label: 'Visible', type: 'toggle', defaultValue: true },
       { key: 'dashed', label: 'Dashed', type: 'toggle', defaultValue: false },
     ],
   },
@@ -504,6 +551,32 @@ const settingsMap: Record<string, BlockSettingsConfig> = {
     ],
   },
 
+  label: {
+    type: 'label',
+    label: 'Label',
+    category: 'layout',
+    fields: [
+      ...commonFields,
+      { key: 'text', label: 'Text', type: 'text', placeholder: 'Label text' },
+      { key: 'textColor', label: 'Text color', type: 'color' },
+      { key: 'fontSize', label: 'Font size (px)', type: 'number', defaultValue: 13, min: 10, max: 24 },
+      { key: 'bold', label: 'Bold', type: 'toggle', defaultValue: false },
+    ],
+  },
+
+  postit: {
+    type: 'postit',
+    label: 'Post-it',
+    category: 'layout',
+    fields: [
+      ...commonFields,
+      { key: 'content', label: 'Text', type: 'text', placeholder: 'Write something...' },
+      { key: 'bgColor', label: 'Background color', type: 'color' },
+      { key: 'textColor', label: 'Text color', type: 'color' },
+      { key: 'fontSize', label: 'Font size (px)', type: 'number', defaultValue: 14, min: 10, max: 32 },
+    ],
+  },
+
   spacer: {
     type: 'spacer',
     label: 'Spacer',
@@ -511,7 +584,6 @@ const settingsMap: Record<string, BlockSettingsConfig> = {
     fields: [
       { key: 'title', label: 'Title', type: 'text', placeholder: 'Spacer' },
       { key: 'height', label: 'Height (px)', type: 'number', defaultValue: 32, min: 8, max: 200 },
-      { key: 'visible', label: 'Visible', type: 'toggle', defaultValue: true },
     ],
   },
 

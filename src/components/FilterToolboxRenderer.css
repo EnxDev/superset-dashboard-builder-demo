@@ -3,9 +3,11 @@
 .ftr-root {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   padding: 6px 8px;
+  width: 100%;
   height: 100%;
+  box-sizing: border-box;
   overflow: auto;
 }
 
@@ -15,10 +17,12 @@
   align-items: center;
   gap: 6px;
   flex-shrink: 0;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border);
 }
 
 .ftr-header-icon {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-primary);
 }
 
@@ -37,156 +41,119 @@
   margin: 0 !important;
 }
 
-/* ── Config summary (when no filters array yet) ── */
-.ftr-config-summary {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 8px;
-  border-radius: 4px;
-  background: var(--color-primary);
-  background: color-mix(in srgb, var(--color-primary) 6%, transparent);
-  border: 1px dashed var(--color-border);
-  font-size: 10px;
-  color: var(--color-text-muted);
-}
-
-.ftr-config-summary__icon {
-  font-size: 11px;
-  color: var(--color-primary);
-  opacity: 0.6;
-  flex-shrink: 0;
-}
-
-.ftr-config-summary__text {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-/* ── Filter entries ── */
-.ftr-entries {
+/* ── Filter controls layout ── */
+.ftr-controls {
   display: flex;
   flex-direction: column;
+  gap: 8px;
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.ftr-controls--horizontal {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-content: start;
+}
+
+.ftr-controls--horizontal .ftr-filter-control {
+  flex: 1;
+  min-width: 140px;
+}
+
+/* ── Individual filter info ── */
+.ftr-filter-control {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ftr-control-label {
+  display: flex;
+  align-items: center;
   gap: 6px;
 }
 
-.ftr-entry {
-  border: 1px solid var(--color-border);
-  border-radius: 6px;
-  padding: 6px 8px;
-  background: var(--color-bg);
-}
-
-.ftr-entry__chip {
-  display: flex;
-  align-items: center;
-  gap: 4px;
+.ftr-control-name {
   font-size: 11px;
-}
-
-.ftr-chip-label {
+  font-weight: 600;
+  color: var(--color-text);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: var(--color-text);
-  font-weight: 500;
 }
 
-.ftr-chip-type {
-  font-size: 9px !important;
-  line-height: 14px !important;
-  padding: 0 4px !important;
-  margin: 0 !important;
-}
-
-.ftr-chip-scope {
+.ftr-scope-indicator {
   display: inline-flex;
   align-items: center;
   gap: 2px;
-  flex-shrink: 0;
   font-size: 10px;
-  margin-left: auto;
   color: var(--color-text-muted);
+  margin-left: auto;
+  flex-shrink: 0;
+  cursor: default;
 }
 
-.ftr-chip-scope-count {
+.ftr-scope-indicator span {
   font-size: 9px;
   font-weight: 600;
 }
 
-/* ── Connected charts ── */
-.ftr-connections {
+.ftr-filter-info {
   display: flex;
-  align-items: flex-start;
-  gap: 5px;
-  margin-top: 4px;
-  padding-top: 4px;
-  border-top: 1px dashed var(--color-border);
-}
-
-.ftr-connections__icon {
+  align-items: center;
+  gap: 4px;
   font-size: 10px;
   color: var(--color-text-muted);
-  opacity: 0.6;
-  margin-top: 2px;
-  flex-shrink: 0;
 }
 
-.ftr-connections__none {
+.ftr-filter-type-tag {
+  font-size: 10px !important;
+  line-height: 16px !important;
+  padding: 0 5px !important;
+  margin: 0 !important;
+}
+
+.ftr-filter-dataset,
+.ftr-filter-column {
   font-size: 10px;
   color: var(--color-text-muted);
-  opacity: 0.5;
-  font-style: italic;
-}
-
-.ftr-connections__global {
-  font-size: 10px;
-  color: var(--color-primary);
-  font-weight: 500;
-  cursor: default;
-}
-
-.ftr-connections__list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 3px;
-}
-
-.ftr-connections__tag {
-  display: inline-block;
-  font-size: 9px;
-  font-weight: 500;
-  padding: 1px 6px;
-  border-radius: 3px;
-  background: var(--color-primary);
-  color: #fff;
-  opacity: 0.8;
   white-space: nowrap;
-  max-width: 100px;
   overflow: hidden;
   text-overflow: ellipsis;
-  cursor: default;
-  transition: opacity 0.15s;
 }
 
-.ftr-connections__tag:hover {
-  opacity: 1;
+.ftr-filter-dataset::before {
+  content: '·';
+  margin-right: 4px;
 }
 
-/* ── Empty ── */
-.ftr-empty {
+.ftr-filter-column::before {
+  content: '·';
+  margin-right: 4px;
+}
+
+/* ── Empty state ── */
+.ftr-empty-state {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  height: 100%;
+  flex: 1;
   color: var(--color-text-muted);
   font-size: 11px;
+  padding: 8px;
+  text-align: center;
 }
 
-.ftr-empty-icon {
-  font-size: 20px;
-  opacity: 0.4;
+.ftr-empty-state__icon {
+  font-size: 24px;
+  opacity: 0.3;
+}
+
+.ftr-empty-state__hint {
+  font-size: 10px;
+  opacity: 0.5;
 }

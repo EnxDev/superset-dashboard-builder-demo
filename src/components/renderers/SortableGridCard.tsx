@@ -31,7 +31,6 @@ export default function SortableGridCard({ item, readOnly, allItems, onRemove, o
 
   const sortStyle: React.CSSProperties = {
     ...style,
-    minHeight: isContainer ? 80 : (item.h ?? undefined),
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.4 : 1,

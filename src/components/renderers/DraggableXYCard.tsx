@@ -31,6 +31,7 @@ export default function DraggableXYCard({
   return (
     <div
       ref={setNodeRef}
+      data-item-id={item.id}
       style={{
         position: 'absolute',
         left: isContainer ? (item.x || 0) : item.x,

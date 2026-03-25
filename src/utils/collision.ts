@@ -4,7 +4,8 @@ import type { CanvasItem, LayoutMode } from '../store/templateStore';
 interface Rect { x: number; y: number; w: number; h: number; }
 
 function toRect(item: CanvasItem): Rect {
-  return { x: item.x, y: item.y, w: item.w ?? DEFAULT_CARD_W, h: item.h ?? DEFAULT_CARD_H };
+  const h = item.h || DEFAULT_CARD_H;  // treat 0 (auto-height containers) as default
+  return { x: item.x, y: item.y, w: item.w ?? DEFAULT_CARD_W, h };
 }
 
 function rectsOverlap(a: Rect, b: Rect): boolean {

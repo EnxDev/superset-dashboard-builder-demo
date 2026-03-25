@@ -42,6 +42,19 @@ function CanvasCard({
   const badgeColor = CATEGORY_COLORS[config.category] ?? '#888';
   const rootRef = useRef<HTMLDivElement>(null);
   const isLocked = !!item.config?._locked;
+  const isChromeless = config.type === 'label';
+
+  // For filter elements, show the specific filter type in the badge
+  const FILTER_TYPE_LABELS: Record<string, string> = {
+    value: 'Value Filter', range: 'Range Filter', time: 'Time Filter',
+    timegrain: 'Time Grain', timecolumn: 'Time Column',
+  };
+  const filters = item.config?.filters as Array<{ filterType?: string }> | undefined;
+  const filterType = (item.config?.filterType as string)
+    ?? filters?.[0]?.filterType;
+  const badgeLabel = (config.category === 'filter' && filterType)
+    ? FILTER_TYPE_LABELS[filterType] ?? config.label
+    : config.label;
 
   const toggleLock = () => {
     if (onResize) {
@@ -119,49 +132,52 @@ function CanvasCard({
         'drop-card',
         readOnly ? 'drop-card--readonly' : '',
         isLocked ? 'drop-card--locked' : '',
+        isChromeless ? 'drop-card--chromeless' : '',
       ].filter(Boolean).join(' ')}
       style={style}
     >
-      <div className="drop-card__header">
-        <span
-          className="drop-card__type-badge"
-          style={{ '--badge-color': badgeColor } as React.CSSProperties}
-        >
-          {config.label}
-        </span>
-        {isLocked && <LockOutlined className="drop-card__lock-icon" />}
-        <span className="drop-card__label">{item.title}</span>
-        {!readOnly && (
-          <div className="drop-card__actions">
-            {!isLocked && onExpandH && (
-              <button className="drop-card__expand" onClick={(e) => { e.stopPropagation(); onExpandH(item.id); }} title="Expand to fill row">
-                <ColumnWidthOutlined />
+      {!isChromeless && (
+        <div className="drop-card__header">
+          <span
+            className="drop-card__type-badge"
+            style={{ '--badge-color': badgeColor } as React.CSSProperties}
+          >
+            {badgeLabel}
+          </span>
+          {isLocked && <LockOutlined className="drop-card__lock-icon" />}
+          <span className="drop-card__label">{item.title}</span>
+          {!readOnly && (
+            <div className="drop-card__actions">
+              {!isLocked && onExpandH && (
+                <button className="drop-card__expand" onClick={(e) => { e.stopPropagation(); onExpandH(item.id); }} title="Expand to fill row">
+                  <ColumnWidthOutlined />
+                </button>
+              )}
+              {!isLocked && onExpandV && (
+                <button className="drop-card__expand" onClick={(e) => { e.stopPropagation(); onExpandV(item.id); }} title="Expand to fill column">
+                  <ColumnHeightOutlined />
+                </button>
+              )}
+              <button
+                className={`drop-card__lock ${isLocked ? 'drop-card__lock--active' : ''}`}
+                onClick={(e) => { e.stopPropagation(); toggleLock(); }}
+                onPointerDown={(e) => e.stopPropagation()}
+                title={isLocked ? 'Unlock element' : 'Lock element'}
+              >
+                {isLocked ? <LockOutlined /> : <UnlockOutlined />}
               </button>
-            )}
-            {!isLocked && onExpandV && (
-              <button className="drop-card__expand" onClick={(e) => { e.stopPropagation(); onExpandV(item.id); }} title="Expand to fill column">
-                <ColumnHeightOutlined />
+              <button className="drop-card__settings" onClick={() => onSettings?.(item)} title="Settings">
+                <SettingOutlined />
               </button>
-            )}
-            <button
-              className={`drop-card__lock ${isLocked ? 'drop-card__lock--active' : ''}`}
-              onClick={(e) => { e.stopPropagation(); toggleLock(); }}
-              onPointerDown={(e) => e.stopPropagation()}
-              title={isLocked ? 'Unlock element' : 'Lock element'}
-            >
-              {isLocked ? <LockOutlined /> : <UnlockOutlined />}
-            </button>
-            <button className="drop-card__settings" onClick={() => onSettings?.(item)} title="Settings">
-              <SettingOutlined />
-            </button>
-            {!isLocked && (
-              <button className="drop-card__remove" onClick={() => onRemove?.(item.id)} title="Remove">
-                <CloseOutlined />
-              </button>
-            )}
-          </div>
-        )}
-      </div>
+              {!isLocked && (
+                <button className="drop-card__remove" onClick={() => onRemove?.(item.id)} title="Remove">
+                  <CloseOutlined />
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
       <div className="drop-card__body">
         <CardPreview
           item={item}

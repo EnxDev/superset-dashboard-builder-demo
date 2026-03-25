@@ -62,14 +62,23 @@ interface Props {
 }
 
 /**
- * Custom collision detection: use pointerWithin first (prefers innermost droppable
- * like container zones), fall back to rectIntersection for canvas/card drops.
+ * Custom collision detection:
+ * - pointerWithin picks the innermost droppable under the pointer
+ *   (container zones when the pointer is inside one, canvas otherwise).
+ * - For canvas card drags (reordering), prefer sortable cards over the canvas.
+ * - rectIntersection is the fallback for edge cases.
  */
 const containerAwareCollision: CollisionDetection = (args) => {
-  // pointerWithin returns the smallest droppable the pointer is inside
-  const pointerCollisions = pointerWithin(args);
-  if (pointerCollisions.length > 0) return pointerCollisions;
-  // Fall back to rect intersection for other cases
+  const pointerHits = pointerWithin(args);
+
+  // For canvas card reordering, prefer sortable items over the canvas droppable
+  const data = args.active.data.current as { source?: string } | undefined;
+  if (data?.source === 'canvas') {
+    const cardHit = pointerHits.find((c) => String(c.id) !== 'canvas-droppable');
+    if (cardHit) return [cardHit];
+  }
+
+  if (pointerHits.length > 0) return pointerHits;
   return rectIntersection(args);
 };
 

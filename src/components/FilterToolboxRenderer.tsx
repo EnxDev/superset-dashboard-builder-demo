@@ -1,10 +1,20 @@
 import { Tag, Tooltip } from 'antd';
-import { FilterOutlined, LinkOutlined, DisconnectOutlined, ApiOutlined, SettingOutlined } from '@ant-design/icons';
+import { FilterOutlined, LinkOutlined, DisconnectOutlined } from '@ant-design/icons';
 import type { CanvasItem } from '../store/templateStore';
 import type { FilterRule } from './FilterToolboxModal';
 import { isFilterElement } from './CardPreview';
 import { resolveSettings } from '../data/blockSettings';
 import './FilterToolboxRenderer.css';
+
+const FILTER_TYPE_LABELS: Record<string, string> = {
+  value: 'Value',
+  range: 'Range',
+  time: 'Time',
+  timegrain: 'Time Grain',
+  timecolumn: 'Time Column',
+};
+
+// ── Main renderer ────────────────────────────────────────────────────────────
 
 interface Props {
   item: CanvasItem;
@@ -15,142 +25,95 @@ export default function FilterToolboxRenderer({ item, allItems = [] }: Props) {
   const config = item.config ?? {};
   const filters = (config.filters as FilterRule[] | undefined) ?? [];
   const settings = resolveSettings(item.key);
+  const orientation = (config.orientation as string) ?? 'vertical';
 
-  // All non-filter canvas items (potential targets)
   const chartItems = allItems.filter((it) => !isFilterElement(it.key) && it.id !== item.id);
 
-  // No filters configured — show summary of what this filter element is + connected charts
+  // No filters configured — show empty state
   if (filters.length === 0) {
+    const singleFilterType = config.filterType as string | undefined;
+    if (singleFilterType) {
+      const pseudoFilter: FilterRule = {
+        id: 'single',
+        filterType: singleFilterType,
+        name: (config.title as string) || '',
+        dataset: (config.dataset as string) || 'sales',
+        column: (config.column as string) || '',
+        multiSelect: (config.multiSelect as boolean) ?? true,
+        dynamicSearch: (config.searchEnabled as boolean) ?? false,
+        defaultValue: (config.defaultValue as string) || '',
+        preFilterValues: false, sortFilterValues: false, description: '',
+        matchType: 'in', hasDefaultValue: false, isRequired: false,
+        selectFirstByDefault: false, allowNewValues: false,
+        inverseSelection: false,
+        scope: (config.scope as 'global' | string[]) ?? 'global',
+      };
+      return (
+        <div className="ftr-root">
+          <FilterInfo filter={pseudoFilter} label={settings.label} chartItems={chartItems} />
+        </div>
+      );
+    }
+
     return (
       <div className="ftr-root">
-        <div className="ftr-header">
-          <FilterOutlined className="ftr-header-icon" />
-          <span className="ftr-header-label">{settings.label}</span>
+        <div className="ftr-empty-state">
+          <FilterOutlined className="ftr-empty-state__icon" />
+          <span>No filters configured</span>
+          <span className="ftr-empty-state__hint">Click settings to add filters</span>
         </div>
-
-        {/* Show basic config info if available */}
-        <div className="ftr-config-summary">
-          <SettingOutlined className="ftr-config-summary__icon" />
-          <span className="ftr-config-summary__text">
-            {config.filterType
-              ? `Type: ${config.filterType}${config.column ? ` on ${config.column}` : ''}`
-              : 'No filters configured yet'}
-          </span>
-        </div>
-
-        {/* Connected charts */}
-        <ConnectedChartsSection
-          chartItems={chartItems}
-          scope={config.scope as 'global' | string[] | undefined}
-        />
       </div>
     );
   }
 
+  // Multiple filters
   return (
-    <div className="ftr-root">
-      {/* Header */}
+    <div className={`ftr-root ftr-root--${orientation}`}>
       <div className="ftr-header">
         <FilterOutlined className="ftr-header-icon" />
         <span className="ftr-header-label">Filters</span>
         <Tag color="blue" className="ftr-active-tag">{filters.length}</Tag>
       </div>
 
-      {/* Filter entries with connected charts */}
-      <div className="ftr-entries">
-        {filters.map((f) => {
-          const isGlobal = f.scope === 'global';
-          const scopeArr = Array.isArray(f.scope) ? f.scope : [];
-
-          // Resolve connected chart names
-          const connectedCharts = isGlobal
-            ? chartItems
-            : scopeArr
-                .map((id) => chartItems.find((it) => it.id === id))
-                .filter(Boolean) as CanvasItem[];
-
-          const label = f.name || f.column || 'Unnamed';
-          const detail = f.column ? `${f.filterType} on ${f.column}` : f.filterType;
-
-          return (
-            <div key={f.id} className="ftr-entry">
-              {/* Filter chip row */}
-              <div className="ftr-entry__chip">
-                <span className="ftr-chip-label">{label}</span>
-                <Tag className="ftr-chip-type">{f.filterType}</Tag>
-                <span className="ftr-chip-scope">
-                  {isGlobal
-                    ? <Tooltip title="Applies to all charts"><LinkOutlined /></Tooltip>
-                    : <Tooltip title={`Scoped to ${connectedCharts.length} chart${connectedCharts.length !== 1 ? 's' : ''}`}>
-                        <span><DisconnectOutlined /> <span className="ftr-chip-scope-count">{scopeArr.length}</span></span>
-                      </Tooltip>
-                  }
-                </span>
-              </div>
-
-              {/* Connected charts list */}
-              <div className="ftr-connections">
-                <ApiOutlined className="ftr-connections__icon" />
-                {connectedCharts.length === 0 ? (
-                  <span className="ftr-connections__none">No charts connected</span>
-                ) : isGlobal ? (
-                  <Tooltip title={connectedCharts.map((c) => c.title).join(', ')}>
-                    <span className="ftr-connections__global">
-                      All charts ({connectedCharts.length})
-                    </span>
-                  </Tooltip>
-                ) : (
-                  <div className="ftr-connections__list">
-                    {connectedCharts.map((chart) => (
-                      <Tooltip key={chart.id} title={detail}>
-                        <span className="ftr-connections__tag">{chart.title}</span>
-                      </Tooltip>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
+      <div className={`ftr-controls ftr-controls--${orientation}`}>
+        {filters.map((f) => (
+          <FilterInfo key={f.id} filter={f} chartItems={chartItems} />
+        ))}
       </div>
     </div>
   );
 }
 
-/** Shared connected charts section */
-function ConnectedChartsSection({ chartItems, scope }: {
-  chartItems: CanvasItem[];
-  scope?: 'global' | string[];
-}) {
-  const isGlobal = !scope || scope === 'global';
-  const scopeArr = Array.isArray(scope) ? scope : [];
+// ── Filter info (non-interactive) ────────────────────────────────────────────
 
-  const connectedCharts = isGlobal
-    ? chartItems
-    : scopeArr
-        .map((id) => chartItems.find((it) => it.id === id))
-        .filter(Boolean) as CanvasItem[];
+function FilterInfo({ filter, label, chartItems }: { filter: FilterRule; label?: string; chartItems: CanvasItem[] }) {
+  const typeName = FILTER_TYPE_LABELS[filter.filterType] ?? filter.filterType;
+  return (
+    <div className="ftr-filter-control">
+      <div className="ftr-control-label">
+        <span className="ftr-control-name">{filter.name || filter.column || label || 'Unnamed'}</span>
+        <ScopeIndicator filter={filter} chartItems={chartItems} />
+      </div>
+      <div className="ftr-filter-info">
+        <Tag color="processing" className="ftr-filter-type-tag">{typeName}</Tag>
+        {filter.dataset && <span className="ftr-filter-dataset">{filter.dataset}</span>}
+        {filter.column && <span className="ftr-filter-column">{filter.column}</span>}
+      </div>
+    </div>
+  );
+}
+
+// ── Scope indicator ──────────────────────────────────────────────────────────
+
+function ScopeIndicator({ filter, chartItems }: { filter: FilterRule; chartItems: CanvasItem[] }) {
+  const isGlobal = filter.scope === 'global';
+  const scopeCount = Array.isArray(filter.scope) ? filter.scope.length : chartItems.length;
 
   return (
-    <div className="ftr-connections">
-      <ApiOutlined className="ftr-connections__icon" />
-      {chartItems.length === 0 ? (
-        <span className="ftr-connections__none">No charts on canvas</span>
-      ) : connectedCharts.length === 0 ? (
-        <span className="ftr-connections__none">No charts connected</span>
-      ) : isGlobal ? (
-        <Tooltip title={connectedCharts.map((c) => c.title).join(', ')}>
-          <span className="ftr-connections__global">
-            All charts ({connectedCharts.length})
-          </span>
-        </Tooltip>
-      ) : (
-        <div className="ftr-connections__list">
-          {connectedCharts.map((chart) => (
-            <span key={chart.id} className="ftr-connections__tag">{chart.title}</span>
-          ))}
-        </div>
-      )}
-    </div>
+    <Tooltip title={isGlobal ? 'Applies to all charts' : `Scoped to ${scopeCount} chart${scopeCount !== 1 ? 's' : ''}`}>
+      <span className="ftr-scope-indicator">
+        {isGlobal ? <LinkOutlined /> : <><DisconnectOutlined /> <span>{scopeCount}</span></>}
+      </span>
+    </Tooltip>
   );
 }
