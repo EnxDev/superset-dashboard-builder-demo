@@ -129,25 +129,47 @@ export default function App() {
     setItems((prev) => { pushHistory(prev); return [...prev, item]; });
   };
 
+  /** Recursively add a child to the container matching parentId */
+  const addChildToTree = (items: CanvasItem[], parentId: string, child: CanvasItem): CanvasItem[] =>
+    items.map((it) => {
+      if (it.id === parentId) return { ...it, children: [...(it.children ?? []), child] };
+      if (it.children) return { ...it, children: addChildToTree(it.children, parentId, child) };
+      return it;
+    });
+
+  const addChildItem = (parentId: string, child: CanvasItem) => {
+    setItems((prev) => { pushHistory(prev); return addChildToTree(prev, parentId, child); });
+  };
+
+  /** Recursively remove an item by id from the tree */
+  const removeFromTree = (items: CanvasItem[], id: string): CanvasItem[] =>
+    items
+      .filter((it) => it.id !== id)
+      .map((it) => it.children ? { ...it, children: removeFromTree(it.children, id) } : it);
+
   const removeItem = (id: string) => {
-    setItems((prev) => { pushHistory(prev); return prev.filter((it) => it.id !== id); });
+    setItems((prev) => { pushHistory(prev); return removeFromTree(prev, id); });
   };
 
   const moveItem = (id: string, x: number, y: number) => {
     setItems((prev) => prev.map((it) => it.id === id ? { ...it, x, y } : it));
   };
 
-  const resizeItem = (id: string, patch: Record<string, unknown>) => {
-    setItems((prev) => {
-      pushHistory(prev);
-      return prev.map((it) => {
-        if (it.id !== id) return it;
+  /** Recursively apply a resize patch to any item in the tree */
+  const applyResizePatch = (items: CanvasItem[], id: string, patch: Record<string, unknown>): CanvasItem[] =>
+    items.map((it) => {
+      if (it.id === id) {
         const { _config, ...rest } = patch;
         const updated = { ...it, ...rest } as CanvasItem;
         if (_config) updated.config = _config as Record<string, unknown>;
         return updated;
-      });
+      }
+      if (it.children) return { ...it, children: applyResizePatch(it.children, id, patch) };
+      return it;
     });
+
+  const resizeItem = (id: string, patch: Record<string, unknown>) => {
+    setItems((prev) => { pushHistory(prev); return applyResizePatch(prev, id, patch); });
   };
 
   const moveGridItem = (id: string, col: number, row: number) => {
@@ -227,7 +249,18 @@ export default function App() {
       title: activeTemplate ? 'Reset to last saved version?' : 'Clear canvas?',
       content: 'Unsaved changes will be lost.',
       okText: 'Reset', okButtonProps: { danger: true },
-      onOk: () => { setItems(activeTemplate?.items ?? []); setIsDirty(false); },
+      onOk: () => {
+        if (activeTemplate) {
+          setItems(activeTemplate.items);
+          setLayoutMode(activeTemplate.layoutMode ?? 'grid');
+          setGridCols(activeTemplate.gridCols ?? 3);
+          setTplProps(activeTemplate.properties ?? {});
+          setTplName(activeTemplate.name);
+        } else {
+          setItems([]);
+        }
+        setIsDirty(false);
+      },
     });
   };
 
@@ -500,7 +533,7 @@ export default function App() {
                   </Dropdown>
                 </div>
 
-                <DropCanvas ref={canvasRef} items={items} layoutMode={layoutMode} gridCols={gridCols} onAdd={addItem} onRemove={removeItem} onUpdateItem={updateItemConfig} onResize={resizeItem} />
+                <DropCanvas ref={canvasRef} items={items} layoutMode={layoutMode} gridCols={gridCols} onAdd={addItem} onAddChild={addChildItem} onRemove={removeItem} onUpdateItem={updateItemConfig} onResize={resizeItem} />
               </>
             )}
           </main>

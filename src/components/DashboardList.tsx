@@ -10,6 +10,22 @@ import { loadTemplates, deleteTemplate, type Template, type CanvasItem, type Lay
 import { STARTER_TEMPLATES, STARTER_CATEGORY_LABELS, type StarterCategory } from '../data/starterTemplates';
 import './DashboardList.css';
 
+const LAYOUT_LABELS: Record<string, { text: string; color: string }> = {
+  grid:   { text: 'Grid',   color: '#1677ff' },
+  rows:   { text: 'Rows',   color: '#0ea5a0' },
+  xy:     { text: 'Free',   color: '#e04380' },
+  mosaic: { text: 'Mosaic', color: '#8b5cf6' },
+};
+
+function LayoutTag({ mode }: { mode?: string }) {
+  const info = LAYOUT_LABELS[mode ?? ''] ?? { text: mode ?? 'Unknown', color: '#888' };
+  return (
+    <span className="db-layout-tag" style={{ '--tag-color': info.color } as React.CSSProperties}>
+      {info.text}
+    </span>
+  );
+}
+
 interface Props {
   onOpen: (tpl: Template) => void;
   onNew: () => void;
@@ -142,6 +158,7 @@ export default function DashboardList({ onOpen, onNew, onStartFromStarter }: Pro
             <thead>
               <tr>
                 <th>Name</th>
+                <th>Layout</th>
                 <th>Charts</th>
                 <th>Last modified</th>
                 <th>Actions</th>
@@ -151,6 +168,7 @@ export default function DashboardList({ onOpen, onNew, onStartFromStarter }: Pro
               {filtered.map((tpl) => (
                 <tr key={tpl.id} className="db-table__row" onClick={() => onOpen(tpl)}>
                   <td className="db-table__name">{tpl.name}</td>
+                  <td className="db-table__layout"><LayoutTag mode={tpl.layoutMode} /></td>
                   <td className="db-table__charts">
                     {tpl.items.length} chart{tpl.items.length !== 1 ? 's' : ''}
                   </td>
@@ -192,7 +210,10 @@ export default function DashboardList({ onOpen, onNew, onStartFromStarter }: Pro
               <div className="db-card__footer">
                 <div className="db-card__info">
                   <span className="db-card__name">{tpl.name}</span>
-                  <span className="db-card__time">{timeAgo(tpl.savedAt)}</span>
+                  <span className="db-card__meta-row">
+                    <LayoutTag mode={tpl.layoutMode} />
+                    <span className="db-card__time">{timeAgo(tpl.savedAt)}</span>
+                  </span>
                 </div>
                 <div className="db-card__btns" onClick={(e) => e.stopPropagation()}>
                   <Tooltip title="Preview">

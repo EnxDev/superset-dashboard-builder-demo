@@ -12,6 +12,7 @@ interface Props {
   nodeKey: string;
   nodeTitle: string;
   isEditing?: boolean;
+  initialConfig?: Record<string, unknown>;
   onConfirm: (values: Record<string, unknown>) => void;
   onCancel: () => void;
 }
@@ -48,7 +49,7 @@ function renderField(field: SettingsField) {
       return <Switch />;
 
     case 'color':
-      return <Input type="color" style={{ width: 48, padding: 2 }} />;
+      return <Input type="color" style={{ width: '100%', height: 32, padding: 2, cursor: 'pointer' }} />;
 
     case 'daterange':
       return <RangePicker style={{ width: '100%' }} />;
@@ -59,22 +60,31 @@ function renderField(field: SettingsField) {
 }
 
 export default function BlockSettingsModal({
-  open, nodeKey, nodeTitle, isEditing, onConfirm, onCancel,
+  open, nodeKey, nodeTitle, isEditing, initialConfig, onConfirm, onCancel,
 }: Props) {
   const [form] = Form.useForm();
   const config = resolveSettings(nodeKey);
   const categoryLabel = getCategoryLabel(config.category);
+  const layoutModeValue = Form.useWatch('layoutMode', form);
+  const borderEnabledValue = Form.useWatch('borderEnabled', form);
 
-  // Seed defaults whenever a new chart is being configured
+  // Seed form: use initialConfig when editing, defaults when creating new
   useEffect(() => {
     if (open) {
-      const defaults: Record<string, unknown> = { title: nodeTitle };
+      const values: Record<string, unknown> = { title: nodeTitle };
       config.fields.forEach((f) => {
-        if (f.defaultValue !== undefined) defaults[f.key] = f.defaultValue;
+        if (f.defaultValue !== undefined) values[f.key] = f.defaultValue;
       });
-      form.setFieldsValue(defaults);
+      // Overlay saved config values when editing
+      if (isEditing && initialConfig) {
+        Object.entries(initialConfig).forEach(([k, v]) => {
+          // Skip internal flags
+          if (!k.startsWith('_')) values[k] = v;
+        });
+      }
+      form.setFieldsValue(values);
     }
-  }, [open, nodeKey, nodeTitle, config, form]);
+  }, [open, nodeKey, nodeTitle, isEditing, initialConfig, config, form]);
 
   const handleOk = async () => {
     const values = await form.validateFields();
@@ -116,6 +126,10 @@ export default function BlockSettingsModal({
             name={field.key}
             label={field.label}
             valuePropName={field.type === 'toggle' ? 'checked' : 'value'}
+            hidden={
+              (field.key === 'gridCols' && !['grid', 'mosaic'].includes(layoutModeValue ?? config.fields.find((f) => f.key === 'layoutMode')?.defaultValue ?? ''))
+              || (['borderColor', 'borderWidth', 'borderRadius', 'borderStyle'].includes(field.key) && !borderEnabledValue)
+            }
           >
             {renderField(field)}
           </Form.Item>

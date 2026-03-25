@@ -1,20 +1,78 @@
-export default function MarkdownPreview() {
+import { useState, useRef, useEffect } from 'react';
+
+interface Props {
+  content?: string;
+  onContentChange?: (content: string) => void;
+  readOnly?: boolean;
+}
+
+export default function MarkdownPreview({ content, onContentChange, readOnly }: Props) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(content ?? '');
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    setDraft(content ?? '');
+  }, [content]);
+
+  useEffect(() => {
+    if (editing && textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [editing]);
+
+  const handleBlur = () => {
+    setEditing(false);
+    if (draft !== (content ?? '') && onContentChange) {
+      onContentChange(draft);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Escape') {
+      setDraft(content ?? '');
+      setEditing(false);
+    }
+    // Stop propagation so dnd-kit/parent handlers don't interfere
+    e.stopPropagation();
+  };
+
+  if (editing && !readOnly) {
+    return (
+      <textarea
+        ref={textareaRef}
+        className="markdown-editor"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={handleBlur}
+        onKeyDown={handleKeyDown}
+        onPointerDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        placeholder="Type markdown here..."
+      />
+    );
+  }
+
+  const displayContent = content?.trim();
+
   return (
-    <svg viewBox="0 0 160 90" width="100%" height="100%" className="svg-preview" role="img" aria-label="Markdown preview">
-      {/* Heading */}
-      <text x="10" y="16" fontSize="10" fontWeight="700" fill="var(--color-text)" opacity="0.8"># Heading</text>
-      {/* Paragraph lines */}
-      <rect x="10" y="24" width="130" height="4" rx="2" fill="var(--color-text-muted)" opacity="0.25" />
-      <rect x="10" y="32" width="110" height="4" rx="2" fill="var(--color-text-muted)" opacity="0.2" />
-      <rect x="10" y="40" width="120" height="4" rx="2" fill="var(--color-text-muted)" opacity="0.2" />
-      {/* Bold keyword */}
-      <rect x="10" y="52" width="30" height="5" rx="2" fill="var(--color-primary)" opacity="0.3" />
-      <rect x="44" y="52" width="90" height="4" rx="2" fill="var(--color-text-muted)" opacity="0.2" />
-      {/* Bullet list */}
-      <circle cx="16" cy="66" r="2" fill="var(--color-primary)" opacity="0.5" />
-      <rect x="22" y="64" width="70" height="4" rx="2" fill="var(--color-text-muted)" opacity="0.2" />
-      <circle cx="16" cy="76" r="2" fill="var(--color-primary)" opacity="0.5" />
-      <rect x="22" y="74" width="55" height="4" rx="2" fill="var(--color-text-muted)" opacity="0.2" />
-    </svg>
+    <div
+      className="markdown-display"
+      onClick={(e) => {
+        if (!readOnly) {
+          e.stopPropagation();
+          setEditing(true);
+        }
+      }}
+      onPointerDown={(e) => { if (!readOnly) e.stopPropagation(); }}
+    >
+      {displayContent ? (
+        <div className="markdown-display__content">{displayContent}</div>
+      ) : (
+        <div className="markdown-display__placeholder">
+          Click to edit markdown...
+        </div>
+      )}
+    </div>
   );
 }

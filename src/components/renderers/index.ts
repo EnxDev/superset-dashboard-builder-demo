@@ -6,3 +6,4 @@ export { default as DraggableXYCard } from './DraggableXYCard';
 export { default as SortableGridCard } from './SortableGridCard';
 export { default as SortableRowCard } from './SortableRowCard';
 export { default as SortableMosaicCard } from './SortableMosaicCard';
+export { default as ContainerCard } from './ContainerCard';

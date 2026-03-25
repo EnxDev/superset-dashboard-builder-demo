@@ -15,6 +15,8 @@ export interface CanvasItem {
   colSpan?: number;
   rowSpan?: number;
   config: Record<string, unknown>;
+  // Container elements (Row, Column, Grid Container, etc.) can hold children
+  children?: CanvasItem[];
 }
 
 export interface TemplateProperties {

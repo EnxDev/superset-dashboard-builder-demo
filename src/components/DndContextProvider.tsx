@@ -7,6 +7,8 @@ import {
   useSensor,
   useSensors,
   rectIntersection,
+  pointerWithin,
+  type CollisionDetection,
   type DragStartEvent,
   type DragEndEvent,
 } from '@dnd-kit/core';
@@ -36,6 +38,9 @@ export type DragData = TreeDragData | CanvasDragData;
 interface ActiveDrag {
   id: string;
   data: DragData;
+  /** Rendered size of the element at drag start */
+  renderedW?: number;
+  renderedH?: number;
 }
 
 // ── Props ────────────────────────────────────────────────────────────────────
@@ -56,6 +61,18 @@ interface Props {
   onRowReorder?: (fromIndex: number, toIndex: number) => void;
 }
 
+/**
+ * Custom collision detection: use pointerWithin first (prefers innermost droppable
+ * like container zones), fall back to rectIntersection for canvas/card drops.
+ */
+const containerAwareCollision: CollisionDetection = (args) => {
+  // pointerWithin returns the smallest droppable the pointer is inside
+  const pointerCollisions = pointerWithin(args);
+  if (pointerCollisions.length > 0) return pointerCollisions;
+  // Fall back to rect intersection for other cases
+  return rectIntersection(args);
+};
+
 export default function DndContextProvider({
   children, items, layoutMode, gridCols, canvasRef,
   onTreeDrop, onMove, onGridMove, onRowReorder,
@@ -72,7 +89,14 @@ export default function DndContextProvider({
 
   const handleDragStart = useCallback((event: DragStartEvent) => {
     const data = event.active.data.current as DragData;
-    setActiveDrag({ id: String(event.active.id), data });
+
+    // Capture the actual rendered size of the dragged element
+    const el = document.getElementById(String(event.active.id))
+      ?? (event.active.node as unknown as { current?: HTMLElement })?.current;
+    const renderedW = el?.offsetWidth;
+    const renderedH = el?.offsetHeight;
+
+    setActiveDrag({ id: String(event.active.id), data, renderedW, renderedH });
 
     // Capture canvas rect at drag start for accurate drop coordinate calculation
     if (canvasRef.current) {
@@ -90,9 +114,15 @@ export default function DndContextProvider({
 
     // ── Tree → Canvas drop ────────────────────────────────────────────────
     if (data.source === 'tree') {
-      // Accept drop if over the canvas droppable OR over any existing canvas card
       if (!over) return;
-      const isCanvasDrop = over.id === 'canvas-droppable';
+
+      // If dropped on a container element, let the ContainerCard's own
+      // useDndMonitor handle it — don't call onTreeDrop.
+      const overId = String(over.id);
+      if (overId.startsWith('container-')) return;
+
+      // Accept drop if over the canvas droppable OR over any existing canvas card
+      const isCanvasDrop = overId === 'canvas-droppable';
       const isOverCanvasCard = items.some((it) => it.id === over.id);
       if (!isCanvasDrop && !isOverCanvasCard) return;
 
@@ -160,7 +190,7 @@ export default function DndContextProvider({
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={rectIntersection}
+      collisionDetection={containerAwareCollision}
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
       onDragCancel={handleDragCancel}
@@ -180,6 +210,8 @@ export default function DndContextProvider({
             source="canvas"
             title={(activeDrag.data as CanvasDragData).item.title}
             item={(activeDrag.data as CanvasDragData).item}
+            renderedW={activeDrag.renderedW}
+            renderedH={activeDrag.renderedH}
           />
         )}
       </DragOverlay>

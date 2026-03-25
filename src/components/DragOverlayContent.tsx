@@ -40,13 +40,15 @@ interface Props {
   title: string;
   nodeKey?: string;
   item?: CanvasItem;
+  renderedW?: number;
+  renderedH?: number;
 }
 
-export default function DragOverlayContent({ source, title, nodeKey, item }: Props) {
+export default function DragOverlayContent({ source, title, nodeKey, item, renderedW, renderedH }: Props) {
   const key = item?.key ?? nodeKey ?? '';
   const { icon, label } = resolveIcon(key);
-  const w = item?.w ?? DEFAULT_CARD_W;
-  const h = item?.h ?? DEFAULT_CARD_H;
+  const w = renderedW ?? item?.w ?? DEFAULT_CARD_W;
+  const h = renderedH ?? item?.h ?? DEFAULT_CARD_H;
 
   return (
     <div

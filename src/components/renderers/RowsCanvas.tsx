@@ -9,9 +9,11 @@ export interface RowsCanvasProps {
   onSettings?: (item: CanvasItem) => void;
   onExpandH?: (id: string) => void;
   onExpandV?: (id: string) => void;
+  onResize?: (id: string, patch: Record<string, unknown>) => void;
+  onContainerDrop?: (parentId: string, key: string, title: string, x?: number, y?: number) => void;
 }
 
-export default function RowsCanvas({ items, readOnly, onRemove, onSettings, onExpandH, onExpandV }: RowsCanvasProps) {
+export default function RowsCanvas({ items, readOnly, onRemove, onSettings, onExpandH, onExpandV, onResize, onContainerDrop }: RowsCanvasProps) {
   const sorted = [...items].sort((a, b) => (a.row ?? 0) - (b.row ?? 0));
 
   return (
@@ -27,6 +29,8 @@ export default function RowsCanvas({ items, readOnly, onRemove, onSettings, onEx
             onSettings={onSettings}
             onExpandH={onExpandH}
             onExpandV={onExpandV}
+            onResize={onResize}
+            onContainerDrop={onContainerDrop}
           />
         ))}
       </div>

@@ -140,9 +140,31 @@
   text-overflow: ellipsis;
 }
 
+.db-card__meta-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .db-card__time {
   font-size: 11px;
   color: var(--color-text-muted);
+}
+
+/* ── Layout type tag ── */
+
+.db-layout-tag {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 1px 6px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--tag-color, #888) 14%, transparent);
+  color: var(--tag-color, #888);
+  white-space: nowrap;
+  line-height: 1.6;
 }
 
 .db-card__btns {
@@ -265,6 +287,10 @@
 .db-table__name {
   font-weight: 500;
   color: var(--color-primary);
+}
+
+.db-table__layout {
+  white-space: nowrap;
 }
 
 .db-table__charts {

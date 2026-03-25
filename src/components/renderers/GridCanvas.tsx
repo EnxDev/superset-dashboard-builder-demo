@@ -10,9 +10,11 @@ export interface GridCanvasProps {
   onSettings?: (item: CanvasItem) => void;
   onExpandH?: (id: string) => void;
   onExpandV?: (id: string) => void;
+  onResize?: (id: string, patch: Record<string, unknown>) => void;
+  onContainerDrop?: (parentId: string, key: string, title: string, x?: number, y?: number) => void;
 }
 
-export default function GridCanvas({ items, gridCols, readOnly, onRemove, onSettings, onExpandH, onExpandV }: GridCanvasProps) {
+export default function GridCanvas({ items, gridCols, readOnly, onRemove, onSettings, onExpandH, onExpandV, onResize, onContainerDrop }: GridCanvasProps) {
   const sorted = [...items].sort((a, b) => {
     const rowDiff = (a.row ?? 0) - (b.row ?? 0);
     if (rowDiff !== 0) return rowDiff;
@@ -32,6 +34,8 @@ export default function GridCanvas({ items, gridCols, readOnly, onRemove, onSett
             onSettings={onSettings}
             onExpandH={onExpandH}
             onExpandV={onExpandV}
+            onResize={onResize}
+            onContainerDrop={onContainerDrop}
             style={{
               gridColumn: `${(item.col ?? 0) + 1} / span ${item.colSpan ?? 1}`,
               gridRow: `${(item.row ?? 0) + 1} / span ${item.rowSpan ?? 1}`,

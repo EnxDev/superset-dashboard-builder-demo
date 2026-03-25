@@ -1,7 +1,8 @@
 .drop-canvas {
   flex: 1;
   position: relative;
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: var(--color-bg);
   transition: background 0.15s, box-shadow 0.15s;
 }
@@ -72,9 +73,10 @@
 
 /* ── Layout mode containers ─────────────────────────────────────────────────── */
 
-/* XY: free absolute positioning — canvas needs overflow:auto so cards aren't clipped */
+/* XY: free absolute positioning — vertical scroll only, no horizontal overflow */
 .drop-canvas--xy {
-  overflow: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
 }
 
 /* Grid layout */
@@ -85,7 +87,9 @@
   padding: 12px;
   align-content: start;
   width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 /* Grid drop indicator */
@@ -105,7 +109,9 @@
   gap: 8px;
   padding: 12px;
   width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .dc-rows .drop-card {
@@ -118,7 +124,9 @@
   column-gap: 8px;
   padding: 12px;
   width: 100%;
+  max-width: 100%;
   box-sizing: border-box;
+  overflow: hidden;
 }
 
 .dc-mosaic .drop-card {
@@ -161,7 +169,7 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   cursor: default;
   transition: box-shadow 0.15s, border-color 0.15s;
-  overflow: hidden;
+  overflow: visible;
   min-width: 80px;
   min-height: 60px;
 }
@@ -174,6 +182,8 @@
   left: unset !important;
   top: unset !important;
   width: 100% !important;
+  max-width: 100%;
+  box-sizing: border-box;
   min-height: 160px;
 }
 
@@ -254,8 +264,59 @@
   color: var(--color-error);
 }
 
-/* ── Read-only mode ── */
+/* ── Lock button ── */
+
+.drop-card__lock {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 3px;
+  transition: color 0.15s, background 0.15s;
+  opacity: 0.5;
+}
+
+.drop-card__lock:hover {
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  opacity: 1;
+}
+
+.drop-card__lock--active {
+  color: var(--color-primary);
+  opacity: 1;
+}
+
+.drop-card__lock-icon {
+  font-size: 10px;
+  color: var(--color-primary);
+  opacity: 0.6;
+}
+
+/* ── Locked card state ── */
+
+.drop-card--locked {
+  border-style: dashed;
+  opacity: 0.85;
+}
+
+.drop-card--locked .drop-card__header {
+  background: color-mix(in srgb, var(--color-primary) 4%, var(--color-surface));
+}
+
+/* ── Read-only / Visualization mode ── */
 .drop-canvas--readonly {
+  background-image: none;
+  background: var(--color-bg);
+}
+
+/* Hide editor grid in readonly — keep it clean */
+.drop-canvas--readonly.drop-canvas--empty {
   background-image: repeating-linear-gradient(
       0deg, transparent, transparent 19px,
       var(--color-border) 19px, var(--color-border) 20px
@@ -268,12 +329,520 @@
   cursor: default;
 }
 
+/* Cards in visualization mode: clean dashboard panels */
 .drop-card--readonly {
+  cursor: default;
+  pointer-events: none;
+  border-color: color-mix(in srgb, var(--color-border) 50%, transparent);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.drop-card--readonly:hover {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  border-color: color-mix(in srgb, var(--color-border) 50%, transparent);
+}
+
+/* Hide type badge and action buttons in visualization mode */
+.drop-card--readonly .drop-card__type-badge {
+  display: none;
+}
+
+.drop-card--readonly .drop-card__actions {
+  display: none;
+}
+
+/* Card header in visualization: just the title, clean look */
+.drop-card--readonly .drop-card__header {
+  padding: 8px 12px 4px;
+  border-bottom: none;
+  background: transparent;
+}
+
+.drop-card--readonly .drop-card__label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+/* Containers in visualization mode: invisible chrome */
+.drop-canvas--readonly .container-row,
+.drop-canvas--readonly .container-col {
+  border: none;
+  background: transparent;
+  pointer-events: none;
+}
+
+.drop-canvas--readonly .container-row__header,
+.drop-canvas--readonly .container-col__header {
+  display: none;
+}
+
+.drop-canvas--readonly .container-row__body,
+.drop-canvas--readonly .container-col__body {
+  padding: 0;
+}
+
+.drop-canvas--readonly .container-resize {
+  display: none;
+}
+
+.drop-canvas--readonly .container-layout-badge {
+  display: none;
+}
+
+/* ── Card resize handles (all elements) ────────────────────────────────────── */
+
+.card-resize {
+  position: absolute;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.drop-card:hover > .card-resize {
+  opacity: 1;
+}
+
+/* Edges */
+.card-resize--top    { top: -3px; left: 0; width: 100%; height: 6px; cursor: ns-resize; display: flex; align-items: center; justify-content: center; }
+.card-resize--right  { top: 0; right: -3px; width: 6px; height: 100%; cursor: ew-resize; display: flex; align-items: center; justify-content: center; }
+.card-resize--bottom { bottom: -3px; left: 0; width: 100%; height: 6px; cursor: ns-resize; display: flex; align-items: center; justify-content: center; }
+.card-resize--left   { top: 0; left: -3px; width: 6px; height: 100%; cursor: ew-resize; display: flex; align-items: center; justify-content: center; }
+
+/* Edge indicators */
+.card-resize--top::after,
+.card-resize--bottom::after {
+  content: '';
+  width: 32px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-primary);
+  opacity: 0.6;
+}
+
+.card-resize--left::after,
+.card-resize--right::after {
+  content: '';
+  width: 3px;
+  height: 32px;
+  border-radius: 2px;
+  background: var(--color-primary);
+  opacity: 0.6;
+}
+
+/* Corners */
+.card-resize--top-left,
+.card-resize--top-right,
+.card-resize--bottom-left,
+.card-resize--bottom-right {
+  width: 12px;
+  height: 12px;
+}
+
+.card-resize--top-left     { top: -2px; left: -2px; cursor: nwse-resize; }
+.card-resize--top-right    { top: -2px; right: -2px; cursor: nesw-resize; }
+.card-resize--bottom-left  { bottom: -2px; left: -2px; cursor: nesw-resize; }
+.card-resize--bottom-right { bottom: -2px; right: -2px; cursor: nwse-resize; }
+
+/* Corner indicators */
+.card-resize--top-left::after,
+.card-resize--top-right::after,
+.card-resize--bottom-left::after,
+.card-resize--bottom-right::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  opacity: 0.7;
+}
+
+.card-resize--top-left::after     { top: 2px; left: 2px; border-top: 2px solid var(--color-primary); border-left: 2px solid var(--color-primary); }
+.card-resize--top-right::after    { top: 2px; right: 2px; border-top: 2px solid var(--color-primary); border-right: 2px solid var(--color-primary); }
+.card-resize--bottom-left::after  { bottom: 2px; left: 2px; border-bottom: 2px solid var(--color-primary); border-left: 2px solid var(--color-primary); }
+.card-resize--bottom-right::after { bottom: 2px; right: 2px; border-bottom: 2px solid var(--color-primary); border-right: 2px solid var(--color-primary); }
+
+/* ── Shared container styles ───────────────────────────────────────────────── */
+
+.container-row,
+.container-col {
+  display: flex;
+  flex-direction: column;
+  border: 2px dashed color-mix(in srgb, #0ea5a0 50%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, #0ea5a0 4%, var(--color-surface));
+  font-size: 12px;
+  color: var(--color-text);
+  min-height: 80px;
+  max-width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.container-row:hover,
+.container-col:hover {
+  border-color: #0ea5a0;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #0ea5a0 20%, transparent);
+}
+
+.container-row--over,
+.container-col--over {
+  border-color: #0ea5a0;
+  border-style: solid;
+  background: color-mix(in srgb, #0ea5a0 10%, var(--color-surface));
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, #0ea5a0 30%, transparent);
+}
+
+.container-row--over .container-row__empty,
+.container-col--over .container-col__empty {
+  border-color: #0ea5a0;
+  color: #0ea5a0;
+  opacity: 1;
+  font-style: normal;
+  font-weight: 500;
+}
+
+.container-row__header,
+.container-col__header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  background: color-mix(in srgb, #0ea5a0 8%, var(--color-surface));
+  border-bottom: 1px solid color-mix(in srgb, #0ea5a0 20%, transparent);
+}
+
+.container-row__label,
+.container-col__label {
+  flex: 1;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.container-row--readonly,
+.container-col--readonly {
   cursor: default;
   pointer-events: none;
 }
 
-.drop-card--readonly:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-  border-color: var(--color-border);
+/* Layout mode badge in header */
+.container-layout-badge {
+  font-size: 9px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: none;
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+  white-space: nowrap;
+  font-family: inherit;
+}
+
+.container-layout-badge--clickable {
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.container-layout-badge--clickable:hover {
+  background: color-mix(in srgb, var(--color-primary) 25%, transparent);
+  transform: scale(1.05);
+}
+
+.container-layout-badge--clickable:active {
+  transform: scale(0.95);
+}
+
+/* ── Container body: base ──────────────────────────────────────────────────── */
+
+.container-row__body,
+.container-col__body {
+  flex: 1;
+  padding: 8px;
+  min-height: 60px;
+}
+
+/* ── Container inner layout modes ──────────────────────────────────────────── */
+
+.container-layout--rows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.container-layout--grid {
+  display: grid;
+  grid-template-columns: repeat(var(--container-cols, 3), 1fr);
+  gap: 8px;
+  align-content: start;
+}
+
+.container-layout--xy {
+  position: relative;
+  min-height: 120px;
+}
+
+.container-layout--mosaic {
+  columns: var(--container-cols, 3);
+  column-gap: 8px;
+}
+
+.container-layout--mosaic > .container-layout__item {
+  break-inside: avoid;
+  margin-bottom: 8px;
+}
+
+.container-layout__item .drop-card {
+  position: relative;
+  min-height: 60px;
+}
+
+/* In flow layouts, cards fill the width */
+.container-layout--rows .container-layout__item .drop-card,
+.container-layout--grid .container-layout__item .drop-card,
+.container-layout--mosaic .container-layout__item .drop-card {
+  width: 100%;
+}
+
+/* In XY layout, cards use their own pixel dimensions */
+.container-layout--xy .container-layout__item .drop-card {
+  width: 100%;
+  height: 100%;
+}
+
+/* Expanded items in flow layouts */
+.container-layout--rows .container-layout__item--expanded-h,
+.container-layout--grid .container-layout__item--expanded-h {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
+.container-layout--mosaic .container-layout__item--expanded-h {
+  column-span: all;
+}
+
+.container-layout__item .container-row,
+.container-layout__item .container-col {
+  width: 100%;
+}
+
+.container-row__empty,
+.container-col__empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  color: var(--color-text-muted);
+  font-size: 11px;
+  font-style: italic;
+  opacity: 0.6;
+  border: 1px dashed var(--color-border);
+  border-radius: 4px;
+  min-height: 48px;
+}
+
+/* In grid layout, rows always span all columns */
+.dc-grid .container-row {
+  grid-column: 1 / -1;
+}
+
+/* ── Column container colors ───────────────────────────────────────────────── */
+
+.container-col {
+  border-color: color-mix(in srgb, #6366f1 50%, transparent);
+  background: color-mix(in srgb, #6366f1 3%, var(--color-surface));
+}
+
+.container-col:hover {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 1px color-mix(in srgb, #6366f1 20%, transparent);
+}
+
+.container-col--over {
+  border-color: #6366f1;
+  background: color-mix(in srgb, #6366f1 10%, var(--color-surface));
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, #6366f1 30%, transparent);
+}
+
+.container-col--over .container-col__empty {
+  border-color: #6366f1;
+  color: #6366f1;
+}
+
+.container-col__header {
+  background: color-mix(in srgb, #6366f1 8%, var(--color-surface));
+  border-bottom: 1px solid color-mix(in srgb, #6366f1 20%, transparent);
+}
+
+/* ── Container resize handles ──────────────────────────────────────────────── */
+
+.container-row,
+.container-col {
+  position: relative;
+}
+
+.container-resize {
+  position: absolute;
+  z-index: 2;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.container-row:hover > .container-resize,
+.container-col:hover > .container-resize {
+  opacity: 1;
+}
+
+/* ── Edge handles ── */
+
+.container-resize--top,
+.container-resize--bottom,
+.container-resize--left,
+.container-resize--right {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.container-resize--top {
+  top: -3px; left: 0;
+  width: 100%; height: 6px;
+  cursor: ns-resize;
+}
+
+.container-resize--right {
+  top: 0; right: -3px;
+  width: 6px; height: 100%;
+  cursor: ew-resize;
+}
+
+.container-resize--bottom {
+  bottom: -3px; left: 0;
+  width: 100%; height: 6px;
+  cursor: ns-resize;
+}
+
+.container-resize--left {
+  top: 0; left: -3px;
+  width: 6px; height: 100%;
+  cursor: ew-resize;
+}
+
+/* Edge grab indicators (centered bar) */
+.container-resize--top::after,
+.container-resize--bottom::after {
+  content: '';
+  width: 32px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--color-primary);
+  opacity: 0.6;
+}
+
+.container-resize--left::after,
+.container-resize--right::after {
+  content: '';
+  width: 3px;
+  height: 32px;
+  border-radius: 2px;
+  background: var(--color-primary);
+  opacity: 0.6;
+}
+
+/* ── Corner handles ── */
+
+.container-resize--top-left,
+.container-resize--top-right,
+.container-resize--bottom-left,
+.container-resize--bottom-right {
+  width: 12px;
+  height: 12px;
+}
+
+.container-resize--top-left     { top: -2px; left: -2px; cursor: nwse-resize; }
+.container-resize--top-right    { top: -2px; right: -2px; cursor: nesw-resize; }
+.container-resize--bottom-left  { bottom: -2px; left: -2px; cursor: nesw-resize; }
+.container-resize--bottom-right { bottom: -2px; right: -2px; cursor: nwse-resize; }
+
+/* Corner grab indicators (L-shaped) */
+.container-resize--top-left::after,
+.container-resize--top-right::after,
+.container-resize--bottom-left::after,
+.container-resize--bottom-right::after {
+  content: '';
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  opacity: 0.7;
+}
+
+.container-resize--top-left::after {
+  top: 2px; left: 2px;
+  border-top: 2px solid var(--color-primary);
+  border-left: 2px solid var(--color-primary);
+}
+
+.container-resize--top-right::after {
+  top: 2px; right: 2px;
+  border-top: 2px solid var(--color-primary);
+  border-right: 2px solid var(--color-primary);
+}
+
+.container-resize--bottom-left::after {
+  bottom: 2px; left: 2px;
+  border-bottom: 2px solid var(--color-primary);
+  border-left: 2px solid var(--color-primary);
+}
+
+.container-resize--bottom-right::after {
+  bottom: 2px; right: 2px;
+  border-bottom: 2px solid var(--color-primary);
+  border-right: 2px solid var(--color-primary);
+}
+
+/* ── Markdown editable element ─────────────────────────────────────────────── */
+
+.markdown-display {
+  width: 100%;
+  height: 100%;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  cursor: text;
+  overflow: auto;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text);
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.markdown-display__content {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+}
+
+.markdown-display__placeholder {
+  color: var(--color-text-muted);
+  font-style: italic;
+  opacity: 0.5;
+}
+
+.markdown-editor {
+  width: 100%;
+  height: 100%;
+  padding: 8px 10px;
+  box-sizing: border-box;
+  border: none;
+  outline: none;
+  resize: none;
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }

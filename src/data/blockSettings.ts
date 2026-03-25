@@ -24,21 +24,54 @@ export interface BlockSettingsConfig {
   type: string;
   label: string;
   category: BlockCategory;
+  isContainer?: boolean;
+  /** Which child types this container accepts: 'column' = only columns, 'content' = charts/widgets/layout, 'row' = only rows */
+  acceptsChildren?: 'column' | 'content' | 'row';
   fields: SettingsField[];
 }
 
 // ── Shared field banks ────────────────────────────────────────────────────────
 
+const layoutModeField: SettingsField = {
+  key: 'layoutMode',
+  label: 'Layout mode',
+  type: 'select',
+  defaultValue: 'xy',
+  options: [
+    { label: 'Free (XY)', value: 'xy' },
+    { label: 'Rows (vertical stack)', value: 'rows' },
+    { label: 'Grid', value: 'grid' },
+    { label: 'Mosaic', value: 'mosaic' },
+  ],
+};
+
+const gridColsField: SettingsField = {
+  key: 'gridCols',
+  label: 'Grid columns',
+  type: 'number',
+  defaultValue: 3,
+  min: 1,
+  max: 12,
+};
+
+const borderFields: SettingsField[] = [
+  { key: 'borderEnabled', label: 'Show border', type: 'toggle', defaultValue: false },
+  { key: 'borderColor', label: 'Border color', type: 'color' },
+  { key: 'borderWidth', label: 'Border width (px)', type: 'number', defaultValue: 1, min: 0, max: 10 },
+  { key: 'borderRadius', label: 'Border radius (px)', type: 'number', defaultValue: 6, min: 0, max: 32 },
+  {
+    key: 'borderStyle', label: 'Border style', type: 'select', defaultValue: 'solid',
+    options: [
+      { label: 'Solid', value: 'solid' },
+      { label: 'Dashed', value: 'dashed' },
+      { label: 'Dotted', value: 'dotted' },
+      { label: 'None', value: 'none' },
+    ],
+  },
+];
+
 const commonFields: SettingsField[] = [
   { key: 'title', label: 'Title', type: 'text', placeholder: 'Title' },
-  {
-    key: 'refreshInterval',
-    label: 'Refresh interval (s)',
-    type: 'number',
-    defaultValue: 0,
-    min: 0,
-    max: 3600,
-  },
   { key: 'visible', label: 'Visible', type: 'toggle', defaultValue: true },
 ];
 
@@ -367,6 +400,8 @@ const settingsMap: Record<string, BlockSettingsConfig> = {
     type: 'tabs',
     label: 'Tabs',
     category: 'tab',
+    isContainer: true,
+    acceptsChildren: 'row',
     fields: [
       ...commonFields,
       { key: 'tabPosition', label: 'Position', type: 'select', defaultValue: 'top',
@@ -386,10 +421,15 @@ const settingsMap: Record<string, BlockSettingsConfig> = {
     type: 'row',
     label: 'Row',
     category: 'layout',
+    isContainer: true,
+    acceptsChildren: 'column',
     fields: [
       ...commonFields,
+      layoutModeField,
+      gridColsField,
       { key: 'background', label: 'Background color', type: 'color' },
       { key: 'padding', label: 'Padding (px)', type: 'number', defaultValue: 0, min: 0, max: 64 },
+      ...borderFields,
     ],
   },
 
@@ -397,21 +437,15 @@ const settingsMap: Record<string, BlockSettingsConfig> = {
     type: 'column',
     label: 'Column',
     category: 'layout',
+    isContainer: true,
+    acceptsChildren: 'content',
     fields: [
       ...commonFields,
+      layoutModeField,
+      gridColsField,
       { key: 'span', label: 'Width (out of 12)', type: 'number', defaultValue: 6, min: 1, max: 12 },
-    ],
-  },
-
-  'grid-container': {
-    type: 'grid-container',
-    label: 'Grid Container',
-    category: 'layout',
-    fields: [
-      ...commonFields,
-      { key: 'columns', label: 'Columns', type: 'number', defaultValue: 12, min: 1, max: 24 },
-      { key: 'gutter', label: 'Gutter (px)', type: 'number', defaultValue: 16, min: 0, max: 64 },
-      { key: 'responsive', label: 'Responsive', type: 'toggle', defaultValue: true },
+      { key: 'background', label: 'Background color', type: 'color' },
+      ...borderFields,
     ],
   },
 
@@ -419,11 +453,15 @@ const settingsMap: Record<string, BlockSettingsConfig> = {
     type: 'container',
     label: 'Container',
     category: 'layout',
+    isContainer: true,
+    acceptsChildren: 'content',
     fields: [
       ...commonFields,
+      layoutModeField,
+      gridColsField,
       { key: 'background', label: 'Background color', type: 'color' },
       { key: 'padding', label: 'Padding (px)', type: 'number', defaultValue: 16, min: 0, max: 64 },
-      { key: 'border', label: 'Show border', type: 'toggle', defaultValue: true },
+      ...borderFields,
     ],
   },
 
@@ -649,6 +687,39 @@ const categoryLabels: Record<BlockCategory, string> = {
 
 export function getCategoryLabel(category: BlockCategory): string {
   return categoryLabels[category];
+}
+
+/** Returns true if the element key resolves to a container type (Row, Column, etc.) */
+export function isContainerElement(key: string): boolean {
+  return resolveSettings(key).isContainer === true;
+}
+
+/** Returns the resolved type string for a key (e.g. 'row', 'column', 'tabs') */
+export function resolveType(key: string): string {
+  return resolveSettings(key).type;
+}
+
+/**
+ * Checks whether `childKey` is a valid child for the container identified by `parentKey`.
+ * Superset hierarchy: Row → Column → content, Tabs → Row
+ */
+export function canAcceptChild(parentKey: string, childKey: string): boolean {
+  const parent = resolveSettings(parentKey);
+  if (!parent.isContainer || !parent.acceptsChildren) return false;
+
+  const child = resolveSettings(childKey);
+
+  switch (parent.acceptsChildren) {
+    case 'column':
+      return child.type === 'column';
+    case 'content':
+      // Columns accept everything except Row/Column/Tabs (structure elements)
+      return !child.isContainer;
+    case 'row':
+      return child.type === 'row';
+    default:
+      return false;
+  }
 }
 
 // ── Resolve config from a node key ────────────────────────────────────────────

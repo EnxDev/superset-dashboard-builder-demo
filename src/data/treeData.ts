@@ -222,9 +222,8 @@ export const treeData: ComponentNode[] = [
         children: [
           { key: 'layout-structure-row', title: 'Row' },
           { key: 'layout-structure-column', title: 'Column' },
-          { key: 'layout-structure-grid-container', title: 'Grid Container' },
           { key: 'layout-structure-container', title: 'Container' },
-          { key: 'layout-structure-tabs', title: 'Tab' },
+          { key: 'layout-structure-tabs', title: 'Tabs' },
         ],
       },
       {

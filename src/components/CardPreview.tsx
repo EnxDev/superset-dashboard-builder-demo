@@ -112,7 +112,7 @@ const PREVIEW_MAP: Record<string, React.ComponentType> = {
   'grid-container': GridContainerPreview,
   header: HeaderPreview,
   divider: DividerPreview,
-  markdown: MarkdownPreview,
+  // markdown handled separately above with editable content
   spacer: SpacerPreview,
 
   // Library widgets
@@ -136,7 +136,14 @@ const PREVIEW_MAP: Record<string, React.ComponentType> = {
   alert: AlertPreview,
 };
 
-export default function CardPreview({ item, allItems }: { item: CanvasItem; allItems?: CanvasItem[] }) {
+interface CardPreviewProps {
+  item: CanvasItem;
+  allItems?: CanvasItem[];
+  readOnly?: boolean;
+  onUpdateConfig?: (id: string, config: Record<string, unknown>) => void;
+}
+
+export default function CardPreview({ item, allItems, readOnly, onUpdateConfig }: CardPreviewProps) {
   const type = resolveType(item.key);
 
   // All filter elements always render through FilterToolboxRenderer
@@ -148,6 +155,19 @@ export default function CardPreview({ item, allItems }: { item: CanvasItem; allI
   // Tabs render as real Ant Design Tabs with config-driven position & count
   if (type === 'tabs') {
     return <TabsPreview config={item.config} />;
+  }
+
+  // Markdown renders as an editable text area
+  if (type === 'markdown') {
+    return (
+      <MarkdownPreview
+        content={item.config?.content as string | undefined}
+        readOnly={readOnly}
+        onContentChange={(content) => {
+          onUpdateConfig?.(item.id, { ...item.config, content });
+        }}
+      />
+    );
   }
 
   const Preview = PREVIEW_MAP[type];

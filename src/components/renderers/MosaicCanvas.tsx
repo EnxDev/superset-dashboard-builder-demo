@@ -10,9 +10,11 @@ export interface MosaicCanvasProps {
   onSettings?: (item: CanvasItem) => void;
   onExpandH?: (id: string) => void;
   onExpandV?: (id: string) => void;
+  onResize?: (id: string, patch: Record<string, unknown>) => void;
+  onContainerDrop?: (parentId: string, key: string, title: string, x?: number, y?: number) => void;
 }
 
-export default function MosaicCanvas({ items, gridCols, readOnly, onRemove, onSettings, onExpandH, onExpandV }: MosaicCanvasProps) {
+export default function MosaicCanvas({ items, gridCols, readOnly, onRemove, onSettings, onExpandH, onExpandV, onResize, onContainerDrop }: MosaicCanvasProps) {
   return (
     <SortableContext items={items.map((it) => it.id)} strategy={rectSortingStrategy}>
       <div
@@ -29,6 +31,8 @@ export default function MosaicCanvas({ items, gridCols, readOnly, onRemove, onSe
             onSettings={onSettings}
             onExpandH={onExpandH}
             onExpandV={onExpandV}
+            onResize={onResize}
+            onContainerDrop={onContainerDrop}
           />
         ))}
       </div>

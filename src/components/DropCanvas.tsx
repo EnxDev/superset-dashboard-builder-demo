@@ -3,9 +3,10 @@ import { useDroppable, useDndMonitor } from '@dnd-kit/core';
 import BlockSettingsModal from './BlockSettingsModal';
 import FilterToolboxModal from './FilterToolboxModal';
 import { isFilterElement } from './CardPreview';
+import { isContainerElement } from '../data/blockSettings';
 import { XYCanvas, GridCanvas, RowsCanvas, MosaicCanvas } from './renderers';
 import { DEFAULT_CARD_W, DEFAULT_CARD_H, CANVAS_FALLBACK_W, CANVAS_FALLBACK_H } from '../constants';
-import { findNonOverlappingPosition, expandHorizontal, expandVertical } from '../utils/collision';
+import { findNonOverlappingPosition } from '../utils/collision';
 import type { CanvasItem, LayoutMode } from '../store/templateStore';
 import './DropCanvas.css';
 
@@ -20,17 +21,18 @@ interface Props {
   gridCols?: number;
   readOnly?: boolean;
   onAdd?: (item: CanvasItem) => void;
+  onAddChild?: (parentId: string, child: CanvasItem) => void;
   onRemove?: (id: string) => void;
   onUpdateItem?: (id: string, config: Record<string, unknown>) => void;
   onResize?: (id: string, patch: Record<string, unknown>) => void;
 }
 
-interface PendingDrop { key: string; title: string; x: number; y: number; }
+interface PendingDrop { key: string; title: string; x: number; y: number; parentId?: string; }
 
 // ── Main DropCanvas ───────────────────────────────────────────────────────────
 
 const DropCanvas = forwardRef<DropCanvasHandle, Props>(
-  ({ items, layoutMode = 'xy', gridCols = 3, readOnly = false, onAdd, onRemove, onUpdateItem, onResize }, ref) => {
+  ({ items, layoutMode = 'xy', gridCols = 3, readOnly = false, onAdd, onAddChild, onRemove, onUpdateItem, onResize }, ref) => {
     const containerEl = useRef<HTMLDivElement | null>(null);
     const [pending, setPending] = useState<PendingDrop | null>(null);
     const [editing, setEditing] = useState<CanvasItem | null>(null);
@@ -101,11 +103,58 @@ const DropCanvas = forwardRef<DropCanvasHandle, Props>(
       },
     }));
 
+    /** Recursively find an item by id in the items tree */
+    const findItem = useCallback((id: string, list: CanvasItem[] = items): CanvasItem | undefined => {
+      for (const it of list) {
+        if (it.id === id) return it;
+        if (it.children) {
+          const found = findItem(id, it.children);
+          if (found) return found;
+        }
+      }
+      return undefined;
+    }, [items]);
+
+    /** Find the parent container that holds the given item id, or null if top-level */
+    const findParent = useCallback((id: string, list: CanvasItem[] = items): CanvasItem | null => {
+      for (const it of list) {
+        if (it.children?.some((c) => c.id === id)) return it;
+        if (it.children) {
+          const found = findParent(id, it.children);
+          if (found) return found;
+        }
+      }
+      return null;
+    }, [items]);
+
+    /** Called by ContainerCard when an element is dropped into a container */
+    const handleContainerDrop = useCallback((parentId: string, key: string, title: string, x?: number, y?: number) => {
+      setPending({ key, title, x: x ?? 0, y: y ?? 0, parentId });
+    }, []);
+
     const handleConfirm = (config: Record<string, unknown>) => {
       if (!pending) return;
       const title = (config.title as string) || pending.title;
 
-      let newItem: CanvasItem;
+      const isContainer = isContainerElement(pending.key);
+      const canvasW = containerEl.current?.clientWidth ?? CANVAS_FALLBACK_W;
+
+      const newItem: CanvasItem = {
+        id: `${pending.key}-${Date.now()}`,
+        key: pending.key,
+        title,
+        x: pending.x, y: pending.y,
+        w: isContainer ? canvasW : DEFAULT_CARD_W,
+        h: isContainer ? 0 : DEFAULT_CARD_H,  // 0 = auto height for containers
+        config,
+      };
+
+      // Dropping into a container element — use the drop position
+      if (pending.parentId) {
+        onAddChild?.(pending.parentId, newItem);
+        setPending(null);
+        return;
+      }
 
       if (layoutMode === 'grid') {
         // Snap to next available grid cell
@@ -116,22 +165,28 @@ const DropCanvas = forwardRef<DropCanvasHandle, Props>(
           col++;
           if (col >= cols) { col = 0; row++; }
         }
-        newItem = { id: `${pending.key}-${Date.now()}`, key: pending.key, title, x: 0, y: 0, w: DEFAULT_CARD_W, h: DEFAULT_CARD_H, col, row, colSpan: 1, rowSpan: 1, config };
+        Object.assign(newItem, { col: isContainer ? 0 : col, row, colSpan: isContainer ? gridCols : 1, rowSpan: 1 });
       } else if (layoutMode === 'rows') {
         const maxRow = items.reduce((max, it) => Math.max(max, (it.row ?? 0)), -1);
-        newItem = { id: `${pending.key}-${Date.now()}`, key: pending.key, title, x: 0, y: 0, w: DEFAULT_CARD_W, h: DEFAULT_CARD_H, row: maxRow + 1, config };
+        newItem.row = maxRow + 1;
       } else {
         // xy / mosaic: use drop coordinates, avoiding overlaps
-        const rawX = pending.x - DEFAULT_CARD_W / 2;
-        const rawY = pending.y - DEFAULT_CARD_H / 2;
-        const newId = `${pending.key}-${Date.now()}`;
-        const el = containerEl.current;
-        const canvasW = el ? el.clientWidth : CANVAS_FALLBACK_W;
-        const canvasH = el ? el.clientHeight : CANVAS_FALLBACK_H;
-        const { x: safeX, y: safeY } = findNonOverlappingPosition(
-          newId, Math.max(0, rawX), Math.max(0, rawY), DEFAULT_CARD_W, DEFAULT_CARD_H, items, canvasW, canvasH,
-        );
-        newItem = { id: newId, key: pending.key, title, x: safeX, y: safeY, w: DEFAULT_CARD_W, h: DEFAULT_CARD_H, config };
+        if (isContainer) {
+          // Containers span full width, only set vertical position
+          const rawY = pending.y - DEFAULT_CARD_H / 2;
+          newItem.x = 0;
+          newItem.y = Math.max(0, rawY);
+        } else {
+          const rawX = pending.x - DEFAULT_CARD_W / 2;
+          const rawY = pending.y - DEFAULT_CARD_H / 2;
+          const cW = containerEl.current?.clientWidth ?? CANVAS_FALLBACK_W;
+          const cH = containerEl.current?.clientHeight ?? CANVAS_FALLBACK_H;
+          const { x: safeX, y: safeY } = findNonOverlappingPosition(
+            newItem.id, Math.max(0, rawX), Math.max(0, rawY), DEFAULT_CARD_W, DEFAULT_CARD_H, items, cW, cH,
+          );
+          newItem.x = safeX;
+          newItem.y = safeY;
+        }
       }
 
       onAdd?.(newItem);
@@ -144,71 +199,85 @@ const DropCanvas = forwardRef<DropCanvasHandle, Props>(
       setEditing(null);
     };
 
-    const handleExpandH = useCallback((id: string) => {
-      const item = items.find((it) => it.id === id);
-      if (!item || !containerEl.current) return;
-
-      const isExpanded = !!item.config?._preExpandH;
-
-      if (isExpanded) {
-        // Restore previous state
-        const pre = item.config._preExpandH as Record<string, unknown>;
-        const cleanConfig = { ...item.config };
-        delete cleanConfig._preExpandH;
-        delete cleanConfig._mosaicSpan;
-        onResize?.(id, { ...pre, _config: cleanConfig });
-      } else if (layoutMode === 'grid') {
-        const saved = { col: item.col ?? 0, colSpan: item.colSpan ?? 1 };
-        const newConfig = { ...item.config, _preExpandH: saved };
-        onResize?.(id, { col: 0, colSpan: gridCols, _config: newConfig });
-      } else if (layoutMode === 'mosaic') {
-        // Mosaic: toggle column-span via config flag (no position data to save)
-        const newConfig = { ...item.config, _preExpandH: { _mosaic: true }, _mosaicSpan: true };
-        onResize?.(id, { _config: newConfig });
-      } else {
-        // XY
-        const canvasW = containerEl.current.clientWidth;
-        const result = expandHorizontal(item, items, canvasW);
-        const newConfig = { ...item.config, _preExpandH: { x: item.x, w: item.w } };
-        onResize?.(id, { ...result, _config: newConfig });
+    /**
+     * Universal expand toggle — works for any item at any nesting level.
+     * Stores previous value in config and toggles to expanded state.
+     */
+    /** Get the available width/height for an item — uses parent container or canvas */
+    const getAvailableSize = useCallback((id: string): { w: number; h: number } => {
+      const parent = findParent(id);
+      if (parent) {
+        // Use the parent container's DOM element for actual rendered size
+        const parentEl = document.querySelector(`[data-container-id="${parent.id}"]`);
+        if (parentEl) {
+          return { w: parentEl.clientWidth, h: parentEl.clientHeight };
+        }
+        // Fallback to parent's stored dimensions
+        return { w: parent.w ?? 600, h: parent.h || 400 };
       }
-    }, [items, layoutMode, gridCols, onResize]);
+      // Top-level: use canvas
+      const el = containerEl.current;
+      return { w: el?.clientWidth ?? 900, h: el?.clientHeight ?? 600 };
+    }, [findParent]);
 
-    const handleExpandV = useCallback((id: string) => {
-      const item = items.find((it) => it.id === id);
-      if (!item || !containerEl.current) return;
+    const handleExpandH = useCallback((id: string) => {
+      const item = findItem(id);
+      if (!item) return;
 
-      const pre = item.config?._preExpandV as Record<string, number> | undefined;
+      const pre = item.config?._preExpandH as Record<string, unknown> | undefined;
 
       if (pre) {
-        // Restore previous state
+        const cleanConfig = { ...item.config };
+        delete cleanConfig._preExpandH;
+        delete cleanConfig._expandedH;
+        delete cleanConfig._mosaicSpan;
+        onResize?.(id, { ...pre, _config: cleanConfig });
+      } else {
+        const saved: Record<string, unknown> = {
+          w: item.w ?? DEFAULT_CARD_W,
+          x: item.x ?? 0,
+          col: item.col ?? 0,
+          colSpan: item.colSpan ?? 1,
+        };
+        const { w: availW } = getAvailableSize(id);
+        const newConfig = { ...item.config, _preExpandH: saved, _expandedH: true, _mosaicSpan: true };
+        onResize?.(id, {
+          x: 0, w: availW,
+          col: 0, colSpan: gridCols,
+          _config: newConfig,
+        });
+      }
+    }, [findItem, getAvailableSize, gridCols, onResize]);
+
+    const handleExpandV = useCallback((id: string) => {
+      const item = findItem(id);
+      if (!item) return;
+
+      const pre = item.config?._preExpandV as Record<string, unknown> | undefined;
+
+      if (pre) {
         const cleanConfig = { ...item.config };
         delete cleanConfig._preExpandV;
+        delete cleanConfig._expandedV;
         onResize?.(id, { ...pre, _config: cleanConfig } as Record<string, unknown>);
-      } else if (layoutMode === 'grid') {
-        // Grid: expand rowSpan to cover all occupied rows + 1
-        const maxRow = items.reduce((m, it) => Math.max(m, (it.row ?? 0) + (it.rowSpan ?? 1)), 1);
-        const saved = { row: item.row ?? 0, rowSpan: item.rowSpan ?? 1 };
-        const newConfig = { ...item.config, _preExpandV: saved };
-        onResize?.(id, { row: 0, rowSpan: maxRow, _config: newConfig } as Record<string, unknown>);
-      } else if (layoutMode === 'rows') {
-        // Rows: double the height (toggle)
-        const saved = { h: item.h ?? DEFAULT_CARD_H };
-        const newConfig = { ...item.config, _preExpandV: saved };
-        onResize?.(id, { h: (item.h ?? DEFAULT_CARD_H) * 2, _config: newConfig } as Record<string, unknown>);
-      } else if (layoutMode === 'mosaic') {
-        // Mosaic: double height
-        const saved = { h: item.h ?? DEFAULT_CARD_H };
-        const newConfig = { ...item.config, _preExpandV: saved };
-        onResize?.(id, { h: (item.h ?? DEFAULT_CARD_H) * 2, _config: newConfig } as Record<string, unknown>);
       } else {
-        // XY: expand y/h
-        const canvasH = containerEl.current.clientHeight;
-        const result = expandVertical(item, items, canvasH);
-        const newConfig = { ...item.config, _preExpandV: { y: item.y, h: item.h } };
-        onResize?.(id, { ...result, _config: newConfig } as Record<string, unknown>);
+        const { h: availH } = getAvailableSize(id);
+        const curH = item.h ?? DEFAULT_CARD_H;
+        const saved: Record<string, unknown> = {
+          h: curH,
+          y: item.y ?? 0,
+          row: item.row ?? 0,
+          rowSpan: item.rowSpan ?? 1,
+        };
+        const newConfig = { ...item.config, _preExpandV: saved, _expandedV: true };
+        // Use the larger of double-height or available container height
+        const expandedH = Math.max(curH * 2, availH);
+        onResize?.(id, {
+          y: 0, h: expandedH,
+          _config: newConfig,
+        } as Record<string, unknown>);
       }
-    }, [items, layoutMode, onResize]);
+    }, [findItem, onResize]);
 
     const isEmpty = items.length === 0;
     const isXY = layoutMode === 'xy';
@@ -250,16 +319,16 @@ const DropCanvas = forwardRef<DropCanvasHandle, Props>(
           )}
 
           {!isEmpty && isXY && (
-            <XYCanvas items={items} readOnly={readOnly} onRemove={onRemove} onSettings={setEditing} onExpandH={handleExpandH} onExpandV={handleExpandV} />
+            <XYCanvas items={items} readOnly={readOnly} onRemove={onRemove} onSettings={setEditing} onExpandH={handleExpandH} onExpandV={handleExpandV} onResize={onResize} onContainerDrop={handleContainerDrop} />
           )}
           {!isEmpty && layoutMode === 'grid' && (
-            <GridCanvas items={items} gridCols={gridCols} readOnly={readOnly} onRemove={onRemove} onSettings={setEditing} onExpandH={handleExpandH} onExpandV={handleExpandV} />
+            <GridCanvas items={items} gridCols={gridCols} readOnly={readOnly} onRemove={onRemove} onSettings={setEditing} onExpandH={handleExpandH} onExpandV={handleExpandV} onResize={onResize} onContainerDrop={handleContainerDrop} />
           )}
           {!isEmpty && layoutMode === 'rows' && (
-            <RowsCanvas items={items} readOnly={readOnly} onRemove={onRemove} onSettings={setEditing} onExpandV={handleExpandV} />
+            <RowsCanvas items={items} readOnly={readOnly} onRemove={onRemove} onSettings={setEditing} onExpandH={handleExpandH} onExpandV={handleExpandV} onResize={onResize} onContainerDrop={handleContainerDrop} />
           )}
           {!isEmpty && layoutMode === 'mosaic' && (
-            <MosaicCanvas items={items} gridCols={gridCols} readOnly={readOnly} onRemove={onRemove} onSettings={setEditing} onExpandH={handleExpandH} onExpandV={handleExpandV} />
+            <MosaicCanvas items={items} gridCols={gridCols} readOnly={readOnly} onRemove={onRemove} onSettings={setEditing} onExpandH={handleExpandH} onExpandV={handleExpandV} onResize={onResize} onContainerDrop={handleContainerDrop} />
           )}
 
           {/* Ghost preview at the drop position */}
@@ -325,9 +394,8 @@ const DropCanvas = forwardRef<DropCanvasHandle, Props>(
             isEditing
             nodeKey={editing.key}
             nodeTitle={editing.title}
-            onConfirm={() => {
-              setEditing(null);
-            }}
+            initialConfig={editing.config}
+            onConfirm={handleEditConfirm}
             onCancel={() => setEditing(null)}
           />
         )}

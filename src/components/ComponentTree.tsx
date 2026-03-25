@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useRef, useEffect, memo } from 'react';
 import { Tree, Input } from 'antd';
-import { HolderOutlined, DeleteOutlined } from '@ant-design/icons';
+import { HolderOutlined, DeleteOutlined, DownOutlined, RightOutlined } from '@ant-design/icons';
 import { useDraggable } from '@dnd-kit/core';
 import type { DataNode } from '@rc-component/tree/lib/interface';
 import { type ComponentNode } from '../data/treeData';
@@ -137,6 +137,17 @@ export default function ComponentTree({ data, showDelete, onDelete, positionPick
     return <span className="group-title">{n.title as string}</span>;
   }, [showDelete, onDelete]);
 
+  const allExpanded = expandedKeys.length >= allKeys.length;
+
+  const toggleExpandAll = useCallback(() => {
+    if (allExpanded) {
+      setExpandedKeys(data.length > 0 ? [data[0].key] : []);
+    } else {
+      setExpandedKeys(allKeys);
+    }
+    setActiveChip(null);
+  }, [allExpanded, allKeys, data]);
+
   const handleSearch = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setSearch(val);
@@ -203,6 +214,14 @@ export default function ComponentTree({ data, showDelete, onDelete, positionPick
           className="tree-search"
           allowClear
         />
+        <button
+          className="expand-all-btn"
+          onClick={toggleExpandAll}
+          title={allExpanded ? 'Collapse all' : 'Expand all'}
+          aria-label={allExpanded ? 'Collapse all' : 'Expand all'}
+        >
+          {allExpanded ? <DownOutlined /> : <RightOutlined />}
+        </button>
         {positionPicker}
       </div>
       <div ref={treeWrapRef} className="tree-virtual-wrap">
