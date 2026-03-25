@@ -91,10 +91,9 @@ export default function DndContextProvider({
     const data = event.active.data.current as DragData;
 
     // Capture the actual rendered size of the dragged element
-    const el = document.getElementById(String(event.active.id))
-      ?? (event.active.node as unknown as { current?: HTMLElement })?.current;
-    const renderedW = el?.offsetWidth;
-    const renderedH = el?.offsetHeight;
+    const rect = event.active.rect.current.initial;
+    const renderedW = rect?.width;
+    const renderedH = rect?.height;
 
     setActiveDrag({ id: String(event.active.id), data, renderedW, renderedH });
 
