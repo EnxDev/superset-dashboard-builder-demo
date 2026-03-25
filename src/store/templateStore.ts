@@ -141,14 +141,6 @@ export function seedDefaultTemplates(): void {
     id: uid(), key, title, ...pos, config,
   });
 
-  const makeRowItem = (
-    key: string, title: string, row: number,
-    config: Record<string, unknown> = {},
-  ): CanvasItem => ({
-    id: uid(), key, title,
-    x: 0, y: 0, w: 900, h: 200,
-    row, config,
-  });
 
   const makeFilter = (
     filterType: string, name: string, dataset: string, column: string,
